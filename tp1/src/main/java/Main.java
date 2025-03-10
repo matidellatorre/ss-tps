@@ -95,9 +95,9 @@ public class Main {
             nearParticles.forEach((key, value) ->
             {
                 try {
-                    fileWriter.write(String.format("[%d: %s]\n", key, value.stream()
+                    fileWriter.write(String.format("%s\n", value.stream()
                             .map(String::valueOf)
-                            .collect(Collectors.joining(" "))));
+                            .collect(Collectors.joining(", "))));
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
