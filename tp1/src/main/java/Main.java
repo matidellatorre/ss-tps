@@ -8,6 +8,14 @@ import java.util.stream.Collectors;
 
 public class Main {
 
+    static int getNextPosition(int coord) {
+        return Constants.getBoundaryCond()?(coord+1)%Constants.getM():coord+1;
+    }
+
+    static int getPrevPosition(int coord) {
+        return Constants.getBoundaryCond()?(coord-1)%Constants.getM():coord-1;
+    }
+
     static Cell getParticleCell(Particle particle) {
         int cellX = (int)Math.floor(particle.getX()/Constants.getCellLen());
         int cellY = (int)Math.floor(particle.getY()/Constants.getCellLen());
@@ -15,7 +23,7 @@ public class Main {
     }
 
     static List<Cell> getNeighbourCells(Cell cell) {
-        return new ArrayList<>(List.of(new Cell(cell.getX(), cell.getY()-1), new Cell(cell.getX()+1, cell.getY()-1), new Cell(cell.getX()+1, cell.getY()), new Cell(cell.getX()+1, cell.getY()+1)));
+        return new ArrayList<>(List.of(new Cell(cell.getX(), getPrevPosition(cell.getY())), new Cell(getNextPosition(cell.getX()), getPrevPosition(cell.getY())), new Cell(getNextPosition(cell.getX()), cell.getY()), new Cell(getNextPosition(cell.getX()), getNextPosition(cell.getY()))));
     }
 
     public static void main(String[] args) {
@@ -28,9 +36,6 @@ public class Main {
         AtomicInteger counter = new AtomicInteger(1);
         Map<Cell, List<Particle>> particlesByCell = new HashMap<>();
 
-        System.out.println(args);
-
-
         Path staticPath = Path.of(staticFile);
         try {
             List<String> lines = Files.lines(staticPath).toList();
@@ -38,12 +43,11 @@ public class Main {
             double l = Double.parseDouble(lines.get(1));
             int m = Integer.parseInt(args[2]);
             double rc = Double.parseDouble(args[3]);
-            Constants.initialize(m, n, l, rc);
+            Constants.initialize(m, n, l, rc, Boolean.parseBoolean(args[4]));
         } catch (IOException e) {
             System.out.println("Error reading static file: "+ e.getMessage());
             return;
         }
-
 
         Path dynamicPath = Path.of(dynamicFile);
         try {

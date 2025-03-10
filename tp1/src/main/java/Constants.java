@@ -4,15 +4,17 @@ public class Constants {
     private static double L;
     private static double Rc;
     private static double cellLen;
+    private static boolean boundaryCond;
 
     private Constants() {}
 
-    public static void initialize(int m, int n, double l, double rc){
+    public static void initialize(int m, int n, double l, double rc, boolean boundaryC){
         M = m;
         N = n;
         L = l;
         Rc = rc;
         cellLen = l/m;
+        boundaryCond = boundaryC;
     }
 
     public static int getM() {
@@ -33,5 +35,9 @@ public class Constants {
 
     public static double getCellLen() {
         return cellLen;
+    }
+
+    public static boolean getBoundaryCond() {
+        return boundaryCond;
     }
 }

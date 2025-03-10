@@ -22,8 +22,21 @@ public class Particle {
         return id;
     }
 
-    public double distanceTo(Particle p){
-        return Math.sqrt((Math.pow(this.x-p.x,2)+Math.pow(this.y-p.y, 2)));
+    public double distanceTo(Particle p) {
+        double dx = Math.abs(this.x - p.x);
+        double dy = Math.abs(this.y - p.y);
+
+        if (Constants.getBoundaryCond()) {
+            if (dx > Constants.getL() / 2) {
+                dx = Constants.getL() - dx;
+            }
+
+            if (dy > Constants.getL() / 2) {
+                dy = Constants.getL() - dy;
+            }
+        }
+
+        return Math.sqrt(dx*dx + dy*dy);
     }
 
     @Override
