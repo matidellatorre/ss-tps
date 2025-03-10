@@ -8,7 +8,7 @@ public class Cell {
     public Cell(int x, int y) {
         this.x = x;
         this.y = y;
-        this.number = this.x+1+Constants.m*this.y;
+        this.number = this.x+1+Constants.getM()*this.y;
 
     }
 

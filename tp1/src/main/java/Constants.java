@@ -1,7 +1,37 @@
 public class Constants {
-    public static final int m = 3;
-    public static final int n = 2;
-    public static final double l = 9.0;
-    public static final double rc = 9;
-    public static final double cellLen = Constants.l/ Constants.m;
+    private static int M;
+    private static int N;
+    private static double L;
+    private static double Rc;
+    private static double cellLen;
+
+    private Constants() {}
+
+    public static void initialize(int m, int n, double l, double rc){
+        M = m;
+        N = n;
+        L = l;
+        Rc = rc;
+        cellLen = l/m;
+    }
+
+    public static int getM() {
+        return M;
+    }
+
+    public static int getN() {
+        return N;
+    }
+
+    public static double getL() {
+        return L;
+    }
+
+    public static double getRc() {
+        return Rc;
+    }
+
+    public static double getCellLen() {
+        return cellLen;
+    }
 }
