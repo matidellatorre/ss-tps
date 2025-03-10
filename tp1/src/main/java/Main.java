@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 public class Main {
 
@@ -71,29 +72,32 @@ public class Main {
         }); {
         }
 
-//        particlesByCell.forEach((key, value) -> System.out.println(key + " has particles " + value));
+        Map<Integer, List<Integer>> nearParticles = new HashMap<>();
 
-        //Create output file with list of neighbours of each particle
-
-        try {
-            FileWriter fileWriter = new FileWriter("output_" + Constants.getN() + "_" + "rc" + Constants.getRc());
-            particles.forEach(particle -> {
-                Cell cell = getParticleCell(particle);
-                List<Cell> neighbourCells = getNeighbourCells(cell);
-                List<Particle> nearParticles = new ArrayList<>();
-                neighbourCells.forEach(n -> nearParticles.addAll(particlesByCell.getOrDefault(n, new ArrayList<>()).stream().filter(p -> p.distanceTo(particle) <= Constants.getRc()).toList()));
-                ;
-                try {
-                    fileWriter.write(String.format("[%d: %s]\n", particle.getId(), String.join(", ", nearParticles.stream().map(p -> String.valueOf(p.getId())).toList())));
-                } catch (IOException e) {
-                    System.out.println("Error writing to file: "+e.getMessage());;
-                }
+        particles.forEach(particle -> {
+            Cell cell = getParticleCell(particle);
+            List<Cell> neighbourCells = getNeighbourCells(cell);
+            neighbourCells.forEach(n -> {
+                List<Particle> nearParticlesList = particlesByCell.getOrDefault(n, new ArrayList<>()).stream().filter(p -> p.distanceTo(particle) <= Constants.getRc()).toList();
+                nearParticles.put(particle.getId(), nearParticlesList.stream().map(Particle::getId).toList());
             });
-            fileWriter.close();
-        } catch (IOException e) {
-            System.out.println("Error creating fileWriter: "+e.getMessage());
-        }
+        });
 
+
+        try (FileWriter fileWriter = new FileWriter("output_" + Constants.getN() + "_" + "rc" + Constants.getRc())) {
+            nearParticles.forEach((key, value) ->
+            {
+                try {
+                    fileWriter.write(String.format("[%d: %s]\n", key, value.stream()
+                            .map(String::valueOf)  // Convert each Integer to a String
+                            .collect(Collectors.joining(" "))));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });  // Join with a space separator
+        } catch (IOException e) {
+            System.out.println("Error writing to file: " + e.getMessage());
+        }
     }
 
 }
