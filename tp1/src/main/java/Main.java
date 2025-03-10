@@ -72,15 +72,21 @@ public class Main {
         }); {
         }
 
+        // 1 2 3
+        // 4 5 6
+        // 7 8 9
+
         Map<Integer, List<Integer>> nearParticles = new HashMap<>();
 
         particles.forEach(particle -> {
             Cell cell = getParticleCell(particle);
             List<Cell> neighbourCells = getNeighbourCells(cell);
+            List<Particle> allNeighbours = new ArrayList<>();
             neighbourCells.forEach(n -> {
                 List<Particle> nearParticlesList = particlesByCell.getOrDefault(n, new ArrayList<>()).stream().filter(p -> p.distanceTo(particle) <= Constants.getRc()).toList();
-                nearParticles.put(particle.getId(), nearParticlesList.stream().map(Particle::getId).toList());
+                allNeighbours.addAll(nearParticlesList);
             });
+            nearParticles.put(particle.getId(), allNeighbours.stream().map(Particle::getId).toList());
         });
 
 
