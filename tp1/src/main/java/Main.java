@@ -9,16 +9,16 @@ import java.util.stream.Collectors;
 public class Main {
 
     static int getNextPosition(int coord) {
-        return Constants.getBoundaryCond()?(coord+1)%Constants.getM():coord+1;
+        return Constants.getBoundaryCond() ? (coord + 1) % Constants.getM() : coord + 1;
     }
 
     static int getPrevPosition(int coord) {
-        return Constants.getBoundaryCond()?(coord-1)%Constants.getM():coord-1;
+        return Constants.getBoundaryCond() ? (coord - 1 + Constants.getM()) % Constants.getM() : coord - 1;
     }
 
     static Cell getParticleCell(Particle particle) {
-        int cellX = (int)Math.floor(particle.getX()/Constants.getCellLen());
-        int cellY = (int)Math.floor(particle.getY()/Constants.getCellLen());
+        int cellX = (int)Math.floor(particle.getX() / Constants.getCellLen());
+        int cellY = (int)Math.floor(particle.getY() / Constants.getCellLen());
         return new Cell(cellX, cellY);
     }
 
@@ -35,6 +35,7 @@ public class Main {
         List<Particle> particles;
         AtomicInteger counter = new AtomicInteger(1);
         Map<Cell, List<Particle>> particlesByCell = new HashMap<>();
+        List<Double> particleRadii = new ArrayList<>();
 
         Path staticPath = Path.of(staticFile);
         try {
@@ -44,8 +45,16 @@ public class Main {
             int m = Integer.parseInt(args[2]);
             double rc = Double.parseDouble(args[3]);
             Constants.initialize(m, n, l, rc, Boolean.parseBoolean(args[4]));
+
+            // Read particle radius from the static file
+            for (int i = 2; i < Math.min(n + 2, lines.size()); i++) {
+                String line = lines.get(i);
+                String[] parts = line.trim().split("\\s+");
+                double radius = Double.parseDouble(parts[0]);
+                particleRadii.add(radius);
+            }
         } catch (IOException e) {
-            System.out.println("Error reading static file: "+ e.getMessage());
+            System.out.println("Error reading static file: " + e.getMessage());
             return;
         }
 
@@ -54,10 +63,15 @@ public class Main {
             particles = Files.lines(dynamicPath)
                     .skip(1)
                     .map(line -> line.trim().split("\\s+"))
-                    .map(parts -> new Particle(Double.parseDouble(parts[0]), Double.parseDouble(parts[1]), counter.getAndIncrement()))
+                    .map(parts -> new Particle(
+                            Double.parseDouble(parts[0]),
+                            Double.parseDouble(parts[1]),
+                            counter.getAndIncrement(),
+                            particleRadii.get(counter.get() - 2)
+                    ))
                     .toList();
         } catch (IOException e) {
-            System.out.println("Error reading dynamic file: "+ e.getMessage());
+            System.out.println("Error reading dynamic file: " + e.getMessage());
             return;
         }
 
@@ -69,8 +83,7 @@ public class Main {
             }
             list.add(particle);
             particlesByCell.put(cell, list);
-        }); {
-        }
+        });
 
         Map<Integer, Set<Integer>> nearParticles = new HashMap<>();
         particles.forEach(p -> nearParticles.put(p.getId(), new HashSet<>()));
@@ -83,7 +96,8 @@ public class Main {
                 List<Particle> nearParticlesList = particlesByCell.getOrDefault(n, new ArrayList<>());
 
                 for (Particle neighbor : nearParticlesList) {
-                    if (particle.getId() != neighbor.getId() && particle.distanceTo(neighbor) <= Constants.getRc()) {
+                    if (particle.getId() != neighbor.getId() &&
+                            particle.distanceTo(neighbor) - particle.getRadius() - neighbor.getRadius() <= Constants.getRc()) {
                         nearParticles.get(particle.getId()).add(neighbor.getId());
                         nearParticles.get(neighbor.getId()).add(particle.getId());
                     }
@@ -92,10 +106,9 @@ public class Main {
         });
 
         try (FileWriter fileWriter = new FileWriter("output_" + Constants.getN() + "_" + "rc" + Constants.getRc())) {
-            nearParticles.forEach((key, value) ->
-            {
+            nearParticles.forEach((key, value) -> {
                 try {
-                    fileWriter.write(String.format("%s\n", value.stream()
+                    fileWriter.write(String.format("%d: %s\n", key, value.stream()
                             .map(String::valueOf)
                             .collect(Collectors.joining(", "))));
                 } catch (IOException e) {

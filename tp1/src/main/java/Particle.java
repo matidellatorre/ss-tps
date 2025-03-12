@@ -2,12 +2,13 @@ public class Particle {
     private final double x;
     private final double y;
     private final int id;
+    private final double radius;
 
-    public Particle(double x, double y, int id) {
+    public Particle(double x, double y, int id, double radius) {
         this.x = x;
         this.y = y;
         this.id = id;
-
+        this.radius = radius;
     }
 
     public double getX() {
@@ -22,29 +23,18 @@ public class Particle {
         return id;
     }
 
-    public double distanceTo(Particle p) {
-        double dx = Math.abs(this.x - p.x);
-        double dy = Math.abs(this.y - p.y);
-
-        if (Constants.getBoundaryCond()) {
-            if (dx > Constants.getL() / 2) {
-                dx = Constants.getL() - dx;
-            }
-
-            if (dy > Constants.getL() / 2) {
-                dy = Constants.getL() - dy;
-            }
-        }
-
-        return Math.sqrt(dx*dx + dy*dy);
+    public double getRadius() {
+        return radius;
     }
 
-    @Override
-    public String toString() {
-        return "Particle{" +
-                "x=" + x +
-                ", y=" + y +
-                ", id=" + id +
-                '}';
+    public double distanceTo(Particle other) {
+        double dx = Constants.getBoundaryCond() ?
+                Math.min(Math.abs(this.x - other.x), Constants.getL() - Math.abs(this.x - other.x)) :
+                Math.abs(this.x - other.x);
+        double dy = Constants.getBoundaryCond() ?
+                Math.min(Math.abs(this.y - other.y), Constants.getL() - Math.abs(this.y - other.y)) :
+                Math.abs(this.y - other.y);
+
+        return Math.sqrt(dx * dx + dy * dy);
     }
 }
