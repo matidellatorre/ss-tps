@@ -173,7 +173,7 @@ public class Main {
         }
         System.out.println("Results match: " + resultsMatch);
 
-        writeResultsToFile("output_" + Constants.getN() + "_" + "rc" + Constants.getRc() + "cim", cimResults);
-        writeResultsToFile("output_" + Constants.getN() + "_" + "rc" + Constants.getRc() + "bruteForce", bruteForceResults);
+        writeResultsToFile("output_" + Constants.getN() + "_" + "rc" + Constants.getRc() + "_cim.txt", cimResults);
+        writeResultsToFile("output_" + Constants.getN() + "_" + "rc" + Constants.getRc() + "_bruteForce.txt", bruteForceResults);
     }
 }

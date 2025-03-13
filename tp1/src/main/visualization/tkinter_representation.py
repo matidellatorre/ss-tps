@@ -10,6 +10,7 @@ import os
 
 class ParticleGridApp:
     def __init__(self, root):
+        # Existing initialization code
         self.root = root
         self.root.title("Particle Grid Visualization")
         self.root.geometry("1000x800")
@@ -19,6 +20,7 @@ class ParticleGridApp:
         self.neighbors = {}
         self.L = 10.0
         self.m = 5
+        self.rc = 1.0  # Default search radius
         self.selected_particle = None
         self.particles_loaded = False
 
@@ -64,13 +66,19 @@ class ParticleGridApp:
         self.m_entry = tk.Entry(self.param_frame, textvariable=self.m_var, width=10)
         self.m_entry.grid(row=0, column=3, padx=5, pady=5)
 
+        # rc parameter (search radius)
+        tk.Label(self.param_frame, text="Search Radius (rc):").grid(row=0, column=4, padx=5, pady=5, sticky="w")
+        self.rc_var = tk.DoubleVar(value=1.0)
+        self.rc_entry = tk.Entry(self.param_frame, textvariable=self.rc_var, width=10)
+        self.rc_entry.grid(row=0, column=5, padx=5, pady=5)
+
         # Load button
         self.load_button = tk.Button(self.param_frame, text="Load & Visualize", command=self.load_and_visualize)
-        self.load_button.grid(row=0, column=4, padx=20, pady=5)
+        self.load_button.grid(row=0, column=6, padx=20, pady=5)
 
         # Generate sample button
         self.sample_button = tk.Button(self.param_frame, text="Generate Sample Data", command=self.generate_sample)
-        self.sample_button.grid(row=0, column=5, padx=5, pady=5)
+        self.sample_button.grid(row=0, column=7, padx=5, pady=5)
 
         # Create plot frame
         self.plot_frame = tk.Frame(self.main_frame)
@@ -165,12 +173,30 @@ class ParticleGridApp:
         neighbors = {}
         try:
             with open(file_path, 'r') as f:
-                for i, line in enumerate(f, 1):  # Particle IDs start from 1
-                    if line.strip():  # Skip empty lines
-                        neighbor_ids = [int(n.strip()) for n in line.strip().split(',') if n.strip()]
-                        neighbors[i] = neighbor_ids
-                    else:
-                        neighbors[i] = []
+                for line in f:
+                    line = line.strip()
+                    if not line:
+                        continue
+
+                    # Parse the new format: "ID: neighbor1, neighbor2, ..."
+                    parts = line.split(':', 1)
+                    if len(parts) != 2:
+                        continue
+
+                    try:
+                        particle_id = int(parts[0].strip())
+                        neighbors_str = parts[1].strip()
+
+                        if neighbors_str:
+                            # Parse the comma-separated list of neighbors
+                            neighbor_ids = [int(n.strip()) for n in neighbors_str.split(',') if n.strip()]
+                            neighbors[particle_id] = neighbor_ids
+                        else:
+                            # Empty neighbors list
+                            neighbors[particle_id] = []
+                    except ValueError as e:
+                        print(f"Warning: Could not parse line: {line}, error: {e}")
+
             return neighbors
         except Exception as e:
             messagebox.showerror("Error", f"Error reading neighbors file: {e}")
@@ -216,6 +242,7 @@ class ParticleGridApp:
         # Update parameters
         self.L = self.L_var.get()
         self.m = self.m_var.get()
+        self.rc = self.rc_var.get()  # Get the search radius
 
         # Read files
         self.positions = self.read_positions_file(pos_path)
@@ -286,6 +313,12 @@ class ParticleGridApp:
         # Get selected particle's neighbors
         selected_neighbors = self.neighbors.get(self.selected_particle, []) if self.selected_particle else []
 
+        # Draw search radius circle if a particle is selected
+        if self.selected_particle and self.selected_particle in self.positions:
+            x, y = self.positions[self.selected_particle]
+            search_circle = plt.Circle((x, y), self.rc, color='red', fill=False, linestyle='--', linewidth=1.5, alpha=0.7, zorder=5)
+            self.ax.add_patch(search_circle)
+
         # Draw all particles
         for particle_id, (x, y) in self.positions.items():
             if particle_id == self.selected_particle:
@@ -305,7 +338,7 @@ class ParticleGridApp:
 
             # Add particle ID
             self.ax.text(x, y, str(particle_id), ha='center', va='center', color='black',
-                    fontsize=9, fontweight='bold', zorder=4)
+                         fontsize=9, fontweight='bold', zorder=4)
 
         # Add cell boundaries
         for i in range(self.m):
@@ -313,7 +346,7 @@ class ParticleGridApp:
                 x_pos = i * cell_size
                 y_pos = j * cell_size
                 rect = patches.Rectangle((x_pos, y_pos), cell_size, cell_size,
-                                       linewidth=1, edgecolor='gray', facecolor='none', alpha=0.5)
+                                         linewidth=1, edgecolor='gray', facecolor='none', alpha=0.5)
                 self.ax.add_patch(rect)
 
         # Add legend
@@ -324,7 +357,8 @@ class ParticleGridApp:
         if self.selected_particle:
             legend_elements.extend([
                 patches.Patch(color='yellow', label=f'Selected Particle ({self.selected_particle})'),
-                patches.Patch(color='green', label='Neighbors')
+                patches.Patch(color='green', label='Neighbors'),
+                patches.Patch(edgecolor='red', facecolor='none', label=f'Search Radius (rc={self.rc})')
             ])
 
         self.ax.legend(handles=legend_elements, loc='upper right')
