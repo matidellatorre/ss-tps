@@ -22,6 +22,77 @@ public class Main {
         return new Cell(cellX, cellY);
     }
 
+    static Map<Integer, Set<Integer>> findNeighborsBruteForce(List<Particle> particles) {
+        long startTime = System.currentTimeMillis();
+
+        Map<Integer, Set<Integer>> nearParticles = new HashMap<>();
+        particles.forEach(p -> nearParticles.put(p.getId(), new HashSet<>()));
+        double rc = Constants.getRc();
+
+        for (int i = 0; i < particles.size(); i++) {
+            Particle particle1 = particles.get(i);
+            for (int j = 0; j < particles.size(); j++) {
+                if (i == j) continue; // Skip same particle
+
+                Particle particle2 = particles.get(j);
+
+                if(particle1.distanceTo(particle2) - particle1.getRadius() - particle2.getRadius() <= rc) {
+                    nearParticles.get(particle1.getId()).add(particle2.getId());
+                }
+            }
+        }
+
+        long endTime = System.currentTimeMillis();
+        System.out.println("Brute force execution time: " + (endTime - startTime) + " ms");
+
+        return nearParticles;
+    }
+
+    static Map<Integer, Set<Integer>> findNeighborsCIM(List<Particle> particles, Map<Cell, List<Particle>> particlesByCell) {
+        long startTime = System.currentTimeMillis();
+
+        Map<Integer, Set<Integer>> nearParticles = new HashMap<>();
+        particles.forEach(p -> nearParticles.put(p.getId(), new HashSet<>()));
+
+        particles.forEach(particle -> {
+            Cell cell = getParticleCell(particle);
+            List<Cell> neighbourCells = getNeighbourCells(cell);
+            neighbourCells.add(cell);
+            neighbourCells.forEach(n -> {
+                List<Particle> nearParticlesList = particlesByCell.getOrDefault(n, new ArrayList<>());
+
+                for (Particle neighbor : nearParticlesList) {
+                    if (particle.getId() != neighbor.getId() &&
+                            particle.distanceTo(neighbor) - particle.getRadius() - neighbor.getRadius() <= Constants.getRc()) {
+                        nearParticles.get(particle.getId()).add(neighbor.getId());
+                        nearParticles.get(neighbor.getId()).add(particle.getId());
+                    }
+                }
+            });
+        });
+
+        long endTime = System.currentTimeMillis();
+        System.out.println("Cell Index Method execution time: " + (endTime - startTime) + " ms");
+
+        return nearParticles;
+    }
+
+    static void writeResultsToFile(String fileName, Map<Integer, Set<Integer>> results) {
+        try (FileWriter fileWriter = new FileWriter(fileName)) {
+            results.forEach((key, value) -> {
+                try {
+                    fileWriter.write(String.format("%d: %s\n", key, value.stream()
+                            .map(String::valueOf)
+                            .collect(Collectors.joining(", "))));
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        } catch (IOException e) {
+            System.out.println("Error writing to file: " + e.getMessage());
+        }
+    }
+
     static List<Cell> getNeighbourCells(Cell cell) {
         return new ArrayList<>(List.of(new Cell(cell.getX(), getPrevPosition(cell.getY())), new Cell(getNextPosition(cell.getX()), getPrevPosition(cell.getY())), new Cell(getNextPosition(cell.getX()), cell.getY()), new Cell(getNextPosition(cell.getX()), getNextPosition(cell.getY()))));
     }
@@ -75,48 +146,32 @@ public class Main {
             return;
         }
 
+        // Create cell mapping
         particles.forEach(particle -> {
             Cell cell = getParticleCell(particle);
-            List<Particle> list = particlesByCell.get(cell);
-            if (list == null) {
-                list = new ArrayList<>();
-            }
+            List<Particle> list = particlesByCell.getOrDefault(cell, new ArrayList<>());
             list.add(particle);
             particlesByCell.put(cell, list);
         });
 
-        Map<Integer, Set<Integer>> nearParticles = new HashMap<>();
-        particles.forEach(p -> nearParticles.put(p.getId(), new HashSet<>()));
+        // Execute and measure CIM
+        Map<Integer, Set<Integer>> cimResults = findNeighborsCIM(particles, particlesByCell);
 
-        particles.forEach(particle -> {
-            Cell cell = getParticleCell(particle);
-            List<Cell> neighbourCells = getNeighbourCells(cell);
-            neighbourCells.add(cell);
-            neighbourCells.forEach(n -> {
-                List<Particle> nearParticlesList = particlesByCell.getOrDefault(n, new ArrayList<>());
+        // Execute and measure Brute Force
+        Map<Integer, Set<Integer>> bruteForceResults = findNeighborsBruteForce(particles);
 
-                for (Particle neighbor : nearParticlesList) {
-                    if (particle.getId() != neighbor.getId() &&
-                            particle.distanceTo(neighbor) - particle.getRadius() - neighbor.getRadius() <= Constants.getRc()) {
-                        nearParticles.get(particle.getId()).add(neighbor.getId());
-                        nearParticles.get(neighbor.getId()).add(particle.getId());
-                    }
-                }
-            });
-        });
-
-        try (FileWriter fileWriter = new FileWriter("output_" + Constants.getN() + "_" + "rc" + Constants.getRc())) {
-            nearParticles.forEach((key, value) -> {
-                try {
-                    fileWriter.write(String.format("%d: %s\n", key, value.stream()
-                            .map(String::valueOf)
-                            .collect(Collectors.joining(", "))));
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            });
-        } catch (IOException e) {
-            System.out.println("Error writing to file: " + e.getMessage());
+        // Verify results are the same (optional)
+        boolean resultsMatch = true;
+        for (Integer particleId : cimResults.keySet()) {
+            if (!cimResults.get(particleId).equals(bruteForceResults.get(particleId))) {
+                resultsMatch = false;
+                System.out.println("Results don't match for particle ID: " + particleId);
+                break;
+            }
         }
+        System.out.println("Results match: " + resultsMatch);
+
+        writeResultsToFile("output_" + Constants.getN() + "_" + "rc" + Constants.getRc() + "cim", cimResults);
+        writeResultsToFile("output_" + Constants.getN() + "_" + "rc" + Constants.getRc() + "bruteForce", bruteForceResults);
     }
 }
