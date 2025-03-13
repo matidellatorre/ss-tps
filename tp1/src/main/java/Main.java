@@ -133,7 +133,9 @@ public class Main {
         try {
             particles = Files.lines(dynamicPath)
                     .skip(1)
+                    .filter(line -> !line.trim().isEmpty()) // Skip empty lines
                     .map(line -> line.trim().split("\\s+"))
+                    .filter(parts -> parts.length >= 2) // Ensure we have enough parts
                     .map(parts -> new Particle(
                             Double.parseDouble(parts[0]),
                             Double.parseDouble(parts[1]),
