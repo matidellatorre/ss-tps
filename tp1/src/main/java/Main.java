@@ -2,6 +2,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.InvalidParameterException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -36,7 +37,7 @@ public class Main {
 
                 Particle particle2 = particles.get(j);
 
-                if(particle1.distanceTo(particle2) - Constants.getRc() - particle2.getRadius() <= rc) {
+                if(particle1.distanceTo(particle2) - particle1.getRadius() - particle2.getRadius() <= rc) {
                     nearParticles.get(particle1.getId()).add(particle2.getId());
                 }
             }
@@ -53,6 +54,7 @@ public class Main {
 
         Map<Integer, Set<Integer>> nearParticles = new HashMap<>();
         particles.forEach(p -> nearParticles.put(p.getId(), new HashSet<>()));
+        double rc = Constants.getRc();
 
         particles.forEach(particle -> {
             Cell cell = getParticleCell(particle);
@@ -63,7 +65,7 @@ public class Main {
 
                 for (Particle neighbor : nearParticlesList) {
                     if (particle.getId() != neighbor.getId() &&
-                            particle.distanceTo(neighbor) - Constants.getRc() - neighbor.getRadius() <= Constants.getRc()) {
+                            particle.distanceTo(neighbor) - particle.getRadius() - neighbor.getRadius() <= rc) {
                         nearParticles.get(particle.getId()).add(neighbor.getId());
                         nearParticles.get(neighbor.getId()).add(particle.getId());
                     }
@@ -117,6 +119,8 @@ public class Main {
             double rc = Double.parseDouble(args[3]);
             Constants.initialize(m, n, l, rc, Boolean.parseBoolean(args[4]));
 
+            if (l/m < rc) throw new InvalidParameterException("L/M must be lower than Rc");
+
             // Read particle radius from the static file
             for (int i = 2; i < Math.min(n + 2, lines.size()); i++) {
                 String line = lines.get(i);
@@ -125,7 +129,7 @@ public class Main {
                 particleRadii.add(radius);
             }
         } catch (IOException e) {
-            System.out.println("Error reading static file: " + e.getMessage());
+            System.out.println("Error: " + e.getMessage());
             return;
         }
 
