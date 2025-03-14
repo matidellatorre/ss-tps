@@ -36,7 +36,7 @@ public class Main {
 
                 Particle particle2 = particles.get(j);
 
-                if(particle1.distanceTo(particle2) - particle1.getRadius() - particle2.getRadius() <= rc) {
+                if(particle1.distanceTo(particle2) - Constants.getRc() - particle2.getRadius() <= rc) {
                     nearParticles.get(particle1.getId()).add(particle2.getId());
                 }
             }
@@ -63,7 +63,7 @@ public class Main {
 
                 for (Particle neighbor : nearParticlesList) {
                     if (particle.getId() != neighbor.getId() &&
-                            particle.distanceTo(neighbor) - particle.getRadius() - neighbor.getRadius() <= Constants.getRc()) {
+                            particle.distanceTo(neighbor) - Constants.getRc() - neighbor.getRadius() <= Constants.getRc()) {
                         nearParticles.get(particle.getId()).add(neighbor.getId());
                         nearParticles.get(neighbor.getId()).add(particle.getId());
                     }
