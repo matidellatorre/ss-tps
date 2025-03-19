@@ -1,0 +1,180 @@
+import java.io.*;
+import java.util.*;
+
+public class MetropolisMonteCarlo {
+    private int[][] grid; // Grilla de opiniones binarias
+    private int N; // Tamaño de la grilla NxN
+    private double p; // Probabilidad de cambiar de opinión
+    private Random random;
+    private FileWriter outputFile;
+
+    public MetropolisMonteCarlo(String configFilePath) {
+        loadConfiguration(configFilePath);
+        grid = new int[N][N];
+        random = new Random();
+        initializeGrid();
+    }
+
+    private void loadConfiguration(String configFilePath) {
+        Properties properties = new Properties();
+        try (FileInputStream fis = new FileInputStream(configFilePath)) {
+            properties.load(fis);
+            N = Integer.parseInt(properties.getProperty("N"));
+            p = Double.parseDouble(properties.getProperty("p"));
+            System.out.println("Configuración cargada: N=" + N + ", p=" + p);
+        } catch (IOException e) {
+            System.err.println("Error al cargar el archivo de configuración: " + e.getMessage());
+            System.exit(1);
+        }
+    }
+
+    private void initializeGrid() {
+        // Inicializar la grilla con valores aleatorios (1 o -1)
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++) {
+                grid[i][j] = random.nextBoolean() ? 1 : -1;
+            }
+        }
+    }
+
+    public void runSimulation(int monteCarloSteps, String outputFilePath) {
+        try {
+            outputFile = new FileWriter(outputFilePath);
+            List<Double> magnetizationHistory = new ArrayList<>();
+
+            // Escribir estado inicial
+            writeGridState(0);
+            double mag = calculateMagnetization();
+            magnetizationHistory.add(mag);
+
+            // Ejecutar la simulación
+            for (int mcs = 1; mcs <= monteCarloSteps; mcs++) {
+                performMonteCarloStep();
+                writeGridState(mcs);
+
+                // Calcular magnetización
+                mag = calculateMagnetization();
+                magnetizationHistory.add(mag);
+
+                // verificar estado estacionario
+                if (mcs % 10 == 0 && isStationary(magnetizationHistory, 0.01)) {
+                    System.out.println("Posible estado estacionario detectado en el paso MCS " + mcs);
+                }
+            }
+
+            // Guardar el historial de magnetización
+            FileWriter magFile = new FileWriter("magnetizacion.txt");
+            for (int i = 0; i < magnetizationHistory.size(); i++) {
+                magFile.write(i + "\t" + magnetizationHistory.get(i) + "\n");
+            }
+            magFile.close();
+
+            outputFile.close();
+            System.out.println("Simulación completada. Resultados guardados en " + outputFilePath);
+
+        } catch (IOException e) {
+            System.err.println("Error al escribir en el archivo de salida: " + e.getMessage());
+            System.exit(1);
+        }
+    }
+
+    private void performMonteCarloStep() {
+        // Un paso de Monte Carlo consiste en N² intentos de actualización
+        int totalSites = N * N;
+
+        for (int attempt = 0; attempt < totalSites; attempt++) {
+            // Elegir un sitio (i,j) al azar
+            int i = random.nextInt(N);
+            int j = random.nextInt(N);
+
+            // Calcular el signo de la suma de los 4 vecinos
+            int sumNeighbors = getNeighborSum(i, j);
+            int majorityOpinion;
+
+            if (sumNeighbors != 0) {
+                majorityOpinion = sumNeighbors > 0 ? 1 : -1;
+            } else {
+                majorityOpinion = grid[i][j]; // En caso de empate, la opinión de la mayoría es la del sitio
+            }
+
+            // Decidir si cambiar o no el estado del sitio
+            double randomProb = random.nextDouble();
+
+            if (randomProb < p) {
+                // Con probabilidad p, cambiar el estado del sitio
+                grid[i][j] = -grid[i][j];
+            } else {
+                // Con probabilidad 1-p, adoptar el estado de la mayoría
+                grid[i][j] = majorityOpinion;
+            }
+        }
+    }
+
+    private int getNeighborSum(int i, int j) {
+        // Calcular la suma de los 4 vecinos con condiciones periódicas de contorno
+        int sum = 0;
+
+        // Vecino superior
+        sum += grid[(i - 1 + N) % N][j];
+
+        // Vecino inferior
+        sum += grid[(i + 1) % N][j];
+
+        // Vecino izquierdo
+        sum += grid[i][(j - 1 + N) % N];
+
+        // Vecino derecho
+        sum += grid[i][(j + 1) % N];
+
+        return sum;
+    }
+
+    private double calculateMagnetization() {
+        double sum = 0;
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++) {
+                sum += grid[i][j];
+            }
+        }
+        return sum / (N * N);
+    }
+
+    private boolean isStationary(List<Double> magnetizationHistory, double threshold) {
+        if (magnetizationHistory.size() < 10) return false; // Necesitamos suficientes muestras
+
+        // Tomar los últimos 10 valores
+        List<Double> recent = magnetizationHistory.subList(
+                Math.max(0, magnetizationHistory.size() - 10), magnetizationHistory.size());
+
+        double mean = recent.stream().mapToDouble(Double::doubleValue).average().getAsDouble();
+        double variance = recent.stream().mapToDouble(m -> Math.pow(m - mean, 2)).sum() / recent.size();
+        double stdDev = Math.sqrt(variance);
+
+        return stdDev < threshold;
+    }
+
+    private void writeGridState(int mcs) throws IOException {
+        outputFile.write("MCS=" + mcs + "\n");
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++) {
+                outputFile.write(grid[i][j] + " ");
+            }
+            outputFile.write("\n");
+        }
+        outputFile.write("\n");
+    }
+
+    public static void main(String[] args) {
+        if (args.length < 2) {
+            System.out.println("Uso: java MetropolisMonteCarlo <archivo_config> <pasos_monte_carlo>");
+            System.exit(1);
+        }
+
+        String configFile = args[0];
+        int monteCarloSteps = Integer.parseInt(args[1]);
+        String outputFile = "resultados_simulacion.txt";
+
+        MetropolisMonteCarlo simulation = new MetropolisMonteCarlo(configFile);
+        simulation.runSimulation(monteCarloSteps, outputFile);
+    }
+}
