@@ -183,4 +183,20 @@ if __name__ == "__main__":
     elif args.magnetization:
         visualizer.calculate_magnetization()
     else:
-        visualizer.create_animation(args.output)
+        visualizer.crea
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+te_animation(args.output)

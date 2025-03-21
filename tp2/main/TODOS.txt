@@ -1,0 +1,9 @@
+Eliminar el grafico que hace de resultados region critica
+
+Hacer que el archivo runner del ejercicio c le pegue al nuevo archivo MetroPolisMonteCarloC
+
+Hacer que el archivo que genera como .csv sea un .txt
+
+Hacer que los archivos los genere en carpetas especificas y que el graficador los levante de ahi
+
+Hacer que se borren los archivos de configuracion despues de correr todo
