@@ -8,7 +8,7 @@ echo "===================================================="
 
 # Compilar los programas Java
 echo "Compilando programas Java..."
-javac MetropolisMonteCarlo.java
+javac MetropolisMonteCarloC.java
 javac MetropolisSimulationRunner.java
 
 # Verificar si la compilación fue exitosa
@@ -43,8 +43,7 @@ fi
 echo "===================================================="
 echo "Proceso completado exitosamente"
 echo "Los resultados y gráficas están disponibles en:"
-echo "  - resultados_finales.csv"
+echo "  - resultados_finales.txt"
 echo "  - evolucion_magnetizacion.png"
 echo "  - resultados_observables.png"
-echo "  - resultados_region_critica.png (si hay suficientes datos en la región crítica)"
 echo "===================================================="

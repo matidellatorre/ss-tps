@@ -133,7 +133,7 @@ def plot_magnetization_evolution():
 def plot_results(p_values, avg_mag, susceptibility):
     """Grafica la magnetización y susceptibilidad en función de p."""
     # Configurar el estilo de la gráfica
-    plt.style.use('seaborn-whitegrid')
+    plt.style.use('seaborn-v0_8-whitegrid')
 
     # Crear una figura con dos subgráficas
     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 12), sharex=True)
@@ -160,30 +160,6 @@ def plot_results(p_values, avg_mag, susceptibility):
     plt.savefig('resultados_observables.png', dpi=300)
     plt.close()
 
-    # Gráfica adicional con zoom en la región crítica
-    # Encontrar índices para valores de p entre 0.06 y 0.1
-    mask = (p_values >= 0.06) & (p_values <= 0.1)
-    if np.any(mask):
-        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 12), sharex=True)
-
-        # Gráfica de magnetización (región crítica)
-        ax1.plot(p_values[mask], avg_mag[mask], 'o-', color='blue', linewidth=2, markersize=8)
-        ax1.set_ylabel('$\\langle |M| \\rangle$', fontsize=14)
-        ax1.set_title('Magnetización promedio en la región crítica', fontsize=16)
-        ax1.grid(True)
-
-        # Gráfica de susceptibilidad (región crítica)
-        ax2.plot(p_values[mask], susceptibility[mask], 'o-', color='red', linewidth=2, markersize=8)
-        ax2.set_xlabel('Probabilidad p', fontsize=14)
-        ax2.set_ylabel('Susceptibilidad $\\chi$', fontsize=14)
-        ax2.set_title('Susceptibilidad en la región crítica', fontsize=16)
-        ax2.grid(True)
-
-        # Ajustar la presentación
-        plt.tight_layout()
-        plt.savefig('resultados_region_critica.png', dpi=300)
-        plt.close()
-
 def main():
     """Función principal para ejecutar el análisis."""
     # Crear directorio para las gráficas si no existe
@@ -197,7 +173,7 @@ def main():
     p_values, avg_mag, avg_mag_squared, susceptibility = read_all_summaries()
 
     # Guardar los resultados en un archivo CSV
-    with open('resultados_finales.csv', 'w') as f:
+    with open('resultados_finales.txt', 'w') as f:
         f.write('p,avg_mag,avg_mag_squared,susceptibility\n')
         for i in range(len(p_values)):
             f.write(f'{p_values[i]},{avg_mag[i]},{avg_mag_squared[i]},{susceptibility[i]}\n')
@@ -205,11 +181,10 @@ def main():
     # Graficar los resultados
     plot_results(p_values, avg_mag, susceptibility)
 
-    print("Análisis completado. Resultados guardados en 'resultados_finales.csv'")
+    print("Análisis completado. Resultados guardados en 'resultados_finales.txt'")
     print("Gráficas generadas:")
     print("  - evolucion_magnetizacion.png")
     print("  - resultados_observables.png")
-    print("  - resultados_region_critica.png (si hay suficientes datos en la región crítica)")
 
 if __name__ == "__main__":
     main()
