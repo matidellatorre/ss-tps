@@ -9,8 +9,6 @@ public class MetropolisMonteCarloC {
     private double p; // Probabilidad de cambiar de opinión
     private Random random;
     private FileWriter outputFile;
-    private boolean stationaryReached = false;
-    private int stationaryStep = -1;
 
     public MetropolisMonteCarloC(String configFilePath) {
         loadConfiguration(configFilePath);
@@ -67,28 +65,16 @@ public class MetropolisMonteCarloC {
                 magSquared = mag * mag;
                 magnetizationHistory.add(mag);
                 magnetizationSquaredHistory.add(magSquared);
-
-                // Verificar estado estacionario
-                if (!stationaryReached && mcs > 100 && isStationary(magnetizationHistory, 0.001)) {
-                    stationaryReached = true;
-                    stationaryStep = mcs;
-                    System.out.println("Estado estacionario detectado en el paso MCS " + mcs);
-                }
             }
 
             // Guardar el historial de magnetización y magnetización al cuadrado
             FileWriter magFile = new FileWriter("magnetizacion.txt");
             magFile.write("# MCS\tM\tM^2\tStationary\n");
             for (int i = 0; i < magnetizationHistory.size(); i++) {
-                boolean isStationary = (stationaryStep != -1 && i >= stationaryStep);
                 magFile.write(i + "\t" + magnetizationHistory.get(i) + "\t" +
-                        magnetizationSquaredHistory.get(i) + "\t" +
-                        (isStationary ? 1 : 0) + "\n");
+                        magnetizationSquaredHistory.get(i) + "\t" + "\n");
             }
             magFile.close();
-
-            // Calcular valores promedio en el estado estacionario
-            calculateStationaryAverages(magnetizationHistory, magnetizationSquaredHistory);
 
             outputFile.close();
             System.out.println("Simulación completada. Resultados guardados en " + outputFilePath);
@@ -96,46 +82,6 @@ public class MetropolisMonteCarloC {
         } catch (IOException e) {
             System.err.println("Error al escribir en el archivo de salida: " + e.getMessage());
             System.exit(1);
-        }
-    }
-
-    private void calculateStationaryAverages(List<Double> magHistory, List<Double> magSquaredHistory) {
-        try {
-            Files.createDirectories(Paths.get("./resultados_finales"));
-            FileWriter summaryFile = new FileWriter("./resultados_finales/magnetizacion_summary.txt");
-
-            int startIdx = stationaryReached ? stationaryStep : (int)(0.5 * magHistory.size());
-
-            // Calcular promedios
-            double avgMag = 0.0;
-            double avgMagSquared = 0.0;
-            int count = 0;
-
-            for (int i = startIdx; i < magHistory.size(); i++) {
-                avgMag += Math.abs(magHistory.get(i)); // Valor absoluto para evitar cancelación
-                avgMagSquared += magSquaredHistory.get(i);
-                count++;
-            }
-
-            avgMag /= count;
-            avgMagSquared /= count;
-
-            // Calcular susceptibilidad: N * (<M^2> - <M>^2)
-            double susceptibility = N * N * (avgMagSquared - avgMag * avgMag);
-
-            summaryFile.write("# p\t<|M|>\t<M^2>\tSusceptibility\tStationaryStep\n");
-            summaryFile.write(p + "\t" + avgMag + "\t" + avgMagSquared + "\t" +
-                    susceptibility + "\t" + stationaryStep + "\n");
-
-            summaryFile.close();
-
-            System.out.println("Resumen del estado estacionario:");
-            System.out.println("  Magnetización promedio (|M|): " + avgMag);
-            System.out.println("  Magnetización al cuadrado promedio (<M^2>): " + avgMagSquared);
-            System.out.println("  Susceptibilidad (N*(<M^2>-<M>^2)): " + susceptibility);
-
-        } catch (IOException e) {
-            System.err.println("Error al escribir el archivo de resumen: " + e.getMessage());
         }
     }
 
