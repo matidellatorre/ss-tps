@@ -127,7 +127,7 @@ def plot_magnetization_evolution():
     plt.title('Evolución de la magnetización para diferentes valores de p')
     plt.legend()
     plt.grid(True)
-    plt.savefig('evolucion_magnetizacion.png', dpi=300)
+    plt.savefig('./graficas/evolucion_magnetizacion.png', dpi=300)
     plt.close()
 
 def plot_results(p_values, avg_mag, susceptibility):
@@ -157,7 +157,7 @@ def plot_results(p_values, avg_mag, susceptibility):
 
     # Ajustar la presentación
     plt.tight_layout()
-    plt.savefig('resultados_observables.png', dpi=300)
+    plt.savefig('./graficas/resultados_observables.png', dpi=300)
     plt.close()
 
 def main():
@@ -173,7 +173,7 @@ def main():
     p_values, avg_mag, avg_mag_squared, susceptibility = read_all_summaries()
 
     # Guardar los resultados en un archivo CSV
-    with open('resultados_finales.txt', 'w') as f:
+    with open('./resultados_finales/resultados_finales.txt', 'w') as f:
         f.write('p,avg_mag,avg_mag_squared,susceptibility\n')
         for i in range(len(p_values)):
             f.write(f'{p_values[i]},{avg_mag[i]},{avg_mag_squared[i]},{susceptibility[i]}\n')

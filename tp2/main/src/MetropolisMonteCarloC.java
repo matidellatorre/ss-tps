@@ -1,4 +1,6 @@
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 
 public class MetropolisMonteCarloC {
@@ -13,7 +15,7 @@ public class MetropolisMonteCarloC {
     public MetropolisMonteCarloC(String configFilePath) {
         loadConfiguration(configFilePath);
         grid = new int[N][N];
-        random = new Random();
+        random = new Random(123);
         initializeGrid();
     }
 
@@ -99,7 +101,8 @@ public class MetropolisMonteCarloC {
 
     private void calculateStationaryAverages(List<Double> magHistory, List<Double> magSquaredHistory) {
         try {
-            FileWriter summaryFile = new FileWriter("magnetizacion_summary.txt");
+            Files.createDirectories(Paths.get("./resultados_finales"));
+            FileWriter summaryFile = new FileWriter("./resultados_finales/magnetizacion_summary.txt");
 
             int startIdx = stationaryReached ? stationaryStep : (int)(0.5 * magHistory.size());
 

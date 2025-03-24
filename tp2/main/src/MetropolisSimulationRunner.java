@@ -1,4 +1,6 @@
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 public class MetropolisSimulationRunner {
     public static void main(String[] args) {
@@ -43,7 +45,15 @@ public class MetropolisSimulationRunner {
     }
 
     private static String createConfigFile(int N, double p) {
-        String configFilePath = "config_p" + p + ".properties";
+
+        try {
+            Files.createDirectories(Paths.get("./configs"));
+        } catch (IOException e) {
+            System.err.println("Error al crear el path de configs: " + e.getMessage());
+            System.exit(1);
+        }
+
+        String configFilePath = "./configs/config_p" + p + ".properties";
         try (FileWriter writer = new FileWriter(configFilePath)) {
             writer.write("N=" + N + "\n");
             writer.write("p=" + p + "\n");

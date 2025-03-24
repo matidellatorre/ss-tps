@@ -47,3 +47,7 @@ echo "  - resultados_finales.txt"
 echo "  - evolucion_magnetizacion.png"
 echo "  - resultados_observables.png"
 echo "===================================================="
+
+rm -rf ./*.class
+rm -rf ./configs
+rm -rf ./resultados
