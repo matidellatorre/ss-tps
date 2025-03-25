@@ -7,8 +7,11 @@ def read_magnetization_file(filename):
     """Lee un archivo de magnetización y devuelve los datos."""
     data = {}
     with open(filename, 'r') as f:
-        # Saltar la línea de encabezado
-        header = f.readline()
+        # Leer línea de encabezado
+        header = f.readline().strip()
+
+        # Leer paso estacionario
+        stationary_step = int(f.readline().strip())
 
         # Leer los datos
         mcs = []
@@ -17,20 +20,26 @@ def read_magnetization_file(filename):
         stationary = []
 
         for line in f:
-            if line.strip() and not line.startswith('#'):
-                parts = line.strip().split('\t')
-                if len(parts) >= 4:
-                    mcs.append(int(parts[0]))
-                    mag.append(float(parts[1]))
-                    mag_squared.append(float(parts[2]))
-                    stationary.append(int(parts[3]))
+            line = line.strip()
+            if line and not line.startswith('#'):
+                parts = line.split()
+                if len(parts) >= 2:
+                    mcs_value = int(parts[0])
+                    mag_value = float(parts[1])
+                    mag_squared_value = float(parts[2]) if len(parts) > 2 else 0
+
+                    mcs.append(mcs_value)
+                    mag.append(mag_value)
+                    mag_squared.append(mag_squared_value)
+                    stationary.append(1 if mcs_value > stationary_step else 0)
 
         data['mcs'] = np.array(mcs)
         data['mag'] = np.array(mag)
         data['mag_squared'] = np.array(mag_squared)
-        data['stationary'] = np.array(stationary)
+        data['stationary_step'] = stationary_step
 
     return data
+
 
 def find_summary_files():
     """Encuentra los archivos de resumen de magnetización en el directorio de resultados."""
@@ -76,11 +85,9 @@ def read_all_summaries():
             data = read_magnetization_file(file_path)
 
             # Filtrar solo los puntos en estado estacionario
-            stationary_mask = data['stationary'] == 1
+            stationary_mask = data['mcs'] > data['stationary_step']
 
-            # Si no hay puntos marcados como estacionarios, usar la segunda mitad de los datos
-            if not np.any(stationary_mask):
-                stationary_mask = data['mcs'] >= len(data['mcs']) // 2
+
 
             stationary_mag = np.abs(data['mag'][stationary_mask])  # Valor absoluto
             stationary_mag_squared = data['mag_squared'][stationary_mask]

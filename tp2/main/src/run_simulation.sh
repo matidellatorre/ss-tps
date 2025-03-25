@@ -30,6 +30,18 @@ if [ $? -ne 0 ]; then
     exit 1
 fi
 
+# Preguntar por el estado estacionario para cada p
+for file in "./resultados"/magnetizacion_*; do
+    # Check if the file exists (glob expansion)
+    [ -e "$file" ] || continue
+
+    # Print the current file being processed
+    echo "Processing file: $file"
+
+    # Run the Python script with the current file path as an argument
+    python3 set_stationary.py "$file"
+done
+
 # Ejecutar el análisis de resultados
 echo "Analizando resultados y generando gráficas..."
 python3 analyze_results.py
@@ -49,5 +61,5 @@ echo "  - resultados_observables.png"
 echo "===================================================="
 
 rm -rf ./*.class
-rm -rf ./configs
-rm -rf ./resultados
+#rm -rf ./configs
+#rm -rf ./resultados

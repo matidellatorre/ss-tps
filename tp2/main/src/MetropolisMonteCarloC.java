@@ -146,30 +146,6 @@ public class MetropolisMonteCarloC {
         return sum / (N * N);
     }
 
-    private boolean isStationary(List<Double> magnetizationHistory, double threshold) {
-        if (magnetizationHistory.size() < 100) return false; // Necesitamos suficientes muestras
-
-        // Tomar los últimos 100 valores
-        int start = Math.max(0, magnetizationHistory.size() - 100);
-        List<Double> recent = magnetizationHistory.subList(start, magnetizationHistory.size());
-
-        // Usar el valor absoluto para evitar oscilaciones alrededor de cero
-        List<Double> absMag = new ArrayList<>();
-        for (Double m : recent) {
-            absMag.add(Math.abs(m));
-        }
-
-        double mean = absMag.stream().mapToDouble(Double::doubleValue).average().getAsDouble();
-        double variance = absMag.stream().mapToDouble(m -> Math.pow(m - mean, 2)).sum() / absMag.size();
-        double stdDev = Math.sqrt(variance);
-
-        // Calcular también la pendiente de la regresión lineal
-        double slope = calculateSlope(recent);
-
-        // Es estacionario si la desviación estándar es baja y la pendiente cercana a cero
-        return stdDev < threshold && Math.abs(slope) < 0.0001;
-    }
-
     private double calculateSlope(List<Double> values) {
         int n = values.size();
         double sumX = 0.0;
