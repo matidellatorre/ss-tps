@@ -42,6 +42,8 @@ for file in "./resultados"/magnetizacion_*; do
     python3 set_stationary.py "$file"
 done
 
+mkdir -p resultados_finales
+
 # Ejecutar el análisis de resultados
 echo "Analizando resultados y generando gráficas..."
 python3 analyze_results.py

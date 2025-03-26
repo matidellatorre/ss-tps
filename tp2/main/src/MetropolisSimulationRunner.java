@@ -11,7 +11,7 @@ public class MetropolisSimulationRunner {
 
         // Valores de p a simular (con mayor densidad cerca de la transición)
         // La transición crítica ocurre alrededor de p=0.075-0.085 para este modelo
-        double[] pValues = {0.05, 0.07, 0.09, 0.11, 0.13, 0.15, 0.17, 0.19, 0.21, 0.23};
+        double[] pValues = {0.05, 0.07, 0.085, 0.09, 0.095, 0.1, 0.105, 0.11, 0.13, 0.15, 0.17, 0.19, 0.21, 0.23};
 
         // Crear directorio para guardar los resultados
         File resultsDir = new File("resultados");

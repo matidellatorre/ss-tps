@@ -13,7 +13,7 @@ public class MetropolisMonteCarloC {
     public MetropolisMonteCarloC(String configFilePath) {
         loadConfiguration(configFilePath);
         grid = new int[N][N];
-        random = new Random(123);
+        random = new Random(12345);
         initializeGrid();
     }
 

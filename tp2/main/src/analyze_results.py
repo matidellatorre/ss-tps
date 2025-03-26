@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.ticker import ScalarFormatter
+import matplotlib.ticker as ticker
 
 def read_magnetization_file(filename):
     """Lee un archivo de magnetización y devuelve los datos."""
@@ -112,58 +112,129 @@ def read_all_summaries():
 
     return p_values, avg_mag, avg_mag_squared, susceptibility
 
+#Funcion de ploteo de la evolución de la magnetización vieja que incluye todos los valores de p
+# def plot_magnetization_evolution():
+#     """Grafica la evolución de la magnetización para todos los valores de p."""
+#     plt.figure(figsize=(10, 6))
+#
+#     for filename in os.listdir('resultados'):
+#         if filename.startswith('magnetizacion_p') and filename.endswith('.txt'):
+#             # Extraer el valor de p del nombre del archivo
+#             p_str = filename.replace('magnetizacion_p', '').replace('.txt', '')
+#             p = float(p_str)
+#
+#             # Leer los datos
+#             file_path = os.path.join('resultados', filename)
+#             data = read_magnetization_file(file_path)
+#
+#             # Graficar la magnetización
+#             plt.plot(data['mcs'], np.abs(data['mag']), label=f'p = {p}')
+#
+#     plt.xlabel('Pasos de Monte Carlo (MCS)')
+#     plt.ylabel('|Magnetización|')
+#     plt.title('Evolución de la magnetización para diferentes valores de p')
+#     plt.legend()
+#     plt.grid(True)
+#     plt.savefig('./graficas/evolucion_magnetizacion.png', dpi=300)
+#     plt.close()
+
 def plot_magnetization_evolution():
-    """Grafica la evolución de la magnetización para todos los valores de p."""
+    """Grafica la evolución de la magnetización para 3 valores representativos de p."""
     plt.figure(figsize=(10, 6))
+
+    # Obtener todos los valores de p
+    p_values = []
+    file_paths = {}
 
     for filename in os.listdir('resultados'):
         if filename.startswith('magnetizacion_p') and filename.endswith('.txt'):
             # Extraer el valor de p del nombre del archivo
             p_str = filename.replace('magnetizacion_p', '').replace('.txt', '')
             p = float(p_str)
+            p_values.append(p)
+            file_paths[p] = os.path.join('resultados', filename)
 
-            # Leer los datos
-            file_path = os.path.join('resultados', filename)
-            data = read_magnetization_file(file_path)
+    # Ordenar los valores de p
+    p_values.sort()
 
-            # Graficar la magnetización
-            plt.plot(data['mcs'], np.abs(data['mag']), label=f'p = {p}')
+    # Seleccionar el mínimo, el medio y el máximo
+    if len(p_values) >= 3:
+        selected_p = [p_values[0], p_values[len(p_values) // 2], p_values[-1]]
+    else:
+        selected_p = p_values  # Si hay menos de 3, usa todos los disponibles
 
+    # Graficar solo los p seleccionados
+    for p in selected_p:
+        data = read_magnetization_file(file_paths[p])
+        plt.plot(data['mcs'], np.abs(data['mag']), label=f'p = {p:.3f}')
+
+    # Configuración de la gráfica
     plt.xlabel('Pasos de Monte Carlo (MCS)')
     plt.ylabel('|Magnetización|')
-    plt.title('Evolución de la magnetización para diferentes valores de p')
+    plt.title('Evolución de la magnetización para 3 valores de p')
     plt.legend()
     plt.grid(True)
+
+    # Guardar la figura
     plt.savefig('./graficas/evolucion_magnetizacion.png', dpi=300)
     plt.close()
 
+#Funcion de ploteo de resultados con 2 gráficos separados, uno encima del otro
+# def plot_results(p_values, avg_mag, susceptibility):
+#     """Grafica la magnetización y susceptibilidad en función de p."""
+#     # Configurar el estilo de la gráfica
+#     plt.style.use('seaborn-whitegrid')
+#
+#     # Crear una figura con dos subgráficas
+#     fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 12), sharex=True)
+#
+#     # Gráfica de magnetización
+#     ax1.plot(p_values, avg_mag, 'o-', color='blue', linewidth=2, markersize=8)
+#     ax1.set_ylabel('$\\langle |M| \\rangle$', fontsize=14)
+#     ax1.set_title('Magnetización promedio en estado estacionario', fontsize=16)
+#     ax1.grid(True)
+#
+#     # Gráfica de susceptibilidad
+#     ax2.plot(p_values, susceptibility, 'o-', color='red', linewidth=2, markersize=8)
+#     ax2.set_xlabel('Probabilidad p', fontsize=14)
+#     ax2.set_ylabel('Susceptibilidad $\\chi = N(\\langle M^2 \\rangle - \\langle M \\rangle^2)$', fontsize=14)
+#     ax2.set_title('Susceptibilidad en estado estacionario', fontsize=16)
+#     ax2.grid(True)
+#
+#     # Escala logarítmica para la susceptibilidad
+#     ax2.set_yscale('log')
+#     ax2.yaxis.set_major_formatter(ScalarFormatter())
+#
+#     # Ajustar la presentación
+#     plt.tight_layout()
+#     plt.savefig('./graficas/resultados_observables.png', dpi=300)
+#     plt.close()
+
 def plot_results(p_values, avg_mag, susceptibility):
-    """Grafica la magnetización y susceptibilidad en función de p."""
-    # Configurar el estilo de la gráfica
-    plt.style.use('seaborn-v0_8-whitegrid')
+    """Grafica la magnetización y susceptibilidad en función de p en una sola gráfica con doble eje Y."""
+    plt.style.use('seaborn-whitegrid')
 
-    # Crear una figura con dos subgráficas
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 12), sharex=True)
+    fig, ax1 = plt.subplots(figsize=(10, 6))
 
-    # Gráfica de magnetización
-    ax1.plot(p_values, avg_mag, 'o-', color='blue', linewidth=2, markersize=8)
-    ax1.set_ylabel('$\\langle |M| \\rangle$', fontsize=14)
-    ax1.set_title('Magnetización promedio en estado estacionario', fontsize=16)
+    # Primer eje Y (magnetización)
+    ax1.plot(p_values, avg_mag, 'o-', color='blue', linewidth=2, markersize=8, label='$\\langle |M| \\rangle$')
+    ax1.set_ylabel('$\\langle |M| \\rangle$', fontsize=14, color='blue')
+    ax1.tick_params(axis='y', labelcolor='blue')
+    ax1.set_title('Magnetización y Susceptibilidad en Estado Estacionario', fontsize=16)
     ax1.grid(True)
 
-    # Gráfica de susceptibilidad
-    ax2.plot(p_values, susceptibility, 'o-', color='red', linewidth=2, markersize=8)
-    ax2.set_xlabel('Probabilidad p', fontsize=14)
-    ax2.set_ylabel('Susceptibilidad $\\chi = N(\\langle M^2 \\rangle - \\langle M \\rangle^2)$', fontsize=14)
-    ax2.set_title('Susceptibilidad en estado estacionario', fontsize=16)
-    ax2.grid(True)
-
-    # Escala logarítmica para la susceptibilidad
+    # Segundo eje Y (susceptibilidad)
+    ax2 = ax1.twinx()
+    ax2.plot(p_values, susceptibility, 'o-', color='red', linewidth=2, markersize=8, label='Susceptibilidad')
+    ax2.set_ylabel('Susceptibilidad $\\chi$', fontsize=14, color='red')
+    ax2.tick_params(axis='y', labelcolor='red')
     ax2.set_yscale('log')
-    ax2.yaxis.set_major_formatter(ScalarFormatter())
+    ax2.yaxis.set_major_formatter(ticker.ScalarFormatter())
 
-    # Ajustar la presentación
-    plt.tight_layout()
+    # Etiqueta del eje X
+    ax1.set_xlabel('Probabilidad p', fontsize=14)
+
+    # Guardar la figura
     plt.savefig('./graficas/resultados_observables.png', dpi=300)
     plt.close()
 
