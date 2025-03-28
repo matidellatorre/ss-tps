@@ -96,7 +96,7 @@ def read_all_summaries():
             if len(stationary_mag) > 0:
                 m_avg = np.mean(stationary_mag)
                 m2_avg = np.mean(stationary_mag_squared)
-                susc = 50 * 50 * (m2_avg - m_avg * m_avg)  # N^2 * (<M^2> - <M>^2)
+                susc = 50 * 50 * (m2_avg - m_avg * m_avg)  # N^2 * (<M(t)^2> - <M(t)>^2)
 
                 p_values.append(p)
                 avg_mag.append(m_avg)
@@ -131,7 +131,7 @@ def read_all_summaries():
 #             plt.plot(data['mcs'], np.abs(data['mag']), label=f'p = {p}')
 #
 #     plt.xlabel('Pasos de Monte Carlo (MCS)')
-#     plt.ylabel('|Magnetización|')
+#     plt.ylabel('Magnetización')
 #     plt.title('Evolución de la magnetización para diferentes valores de p')
 #     plt.legend()
 #     plt.grid(True)
@@ -170,7 +170,7 @@ def plot_magnetization_evolution():
 
     # Configuración de la gráfica
     plt.xlabel('Pasos de Monte Carlo (MCS)')
-    plt.ylabel('|Magnetización|')
+    plt.ylabel('Magnetización')
     plt.title('Evolución de la magnetización para 3 valores de p')
     plt.legend()
     plt.grid(True)
@@ -190,14 +190,14 @@ def plot_magnetization_evolution():
 #
 #     # Gráfica de magnetización
 #     ax1.plot(p_values, avg_mag, 'o-', color='blue', linewidth=2, markersize=8)
-#     ax1.set_ylabel('$\\langle |M| \\rangle$', fontsize=14)
+#     ax1.set_ylabel('$\\langle M(t) \\rangle$', fontsize=14)
 #     ax1.set_title('Magnetización promedio en estado estacionario', fontsize=16)
 #     ax1.grid(True)
 #
 #     # Gráfica de susceptibilidad
 #     ax2.plot(p_values, susceptibility, 'o-', color='red', linewidth=2, markersize=8)
 #     ax2.set_xlabel('Probabilidad p', fontsize=14)
-#     ax2.set_ylabel('Susceptibilidad $\\chi = N(\\langle M^2 \\rangle - \\langle M \\rangle^2)$', fontsize=14)
+#     ax2.set_ylabel('Susceptibilidad $\\chi = N(\\langle M(t)^2 \\rangle - \\langle M(t) \\rangle^2)$', fontsize=14)
 #     ax2.set_title('Susceptibilidad en estado estacionario', fontsize=16)
 #     ax2.grid(True)
 #
@@ -217,8 +217,8 @@ def plot_results(p_values, avg_mag, susceptibility):
     fig, ax1 = plt.subplots(figsize=(10, 6))
 
     # Primer eje Y (magnetización)
-    ax1.plot(p_values, avg_mag, 'o-', color='blue', linewidth=2, markersize=8, label='$\\langle |M| \\rangle$')
-    ax1.set_ylabel('$\\langle |M| \\rangle$', fontsize=14, color='blue')
+    ax1.plot(p_values, avg_mag, 'o-', color='blue', linewidth=2, markersize=8, label='$\\langle M(t) \\rangle$')
+    ax1.set_ylabel('$\\langle M(t) \\rangle$', fontsize=14, color='blue')
     ax1.tick_params(axis='y', labelcolor='blue')
     ax1.set_title('Magnetización y Susceptibilidad en Estado Estacionario', fontsize=16)
     ax1.grid(True)
