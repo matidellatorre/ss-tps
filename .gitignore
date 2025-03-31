@@ -25,3 +25,7 @@ replay_pid*
 /tp1/src/.idea
 /tp2/.idea
 tp2/main/main.iml
+/tp2/main/src/configs
+/tp2/main/src/graficas
+/tp2/main/src/resultados
+/tp2/main/src/resultados_finales
