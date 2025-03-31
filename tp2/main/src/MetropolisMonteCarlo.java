@@ -11,7 +11,7 @@ public class MetropolisMonteCarlo {
     public MetropolisMonteCarlo(String configFilePath) {
         loadConfiguration(configFilePath);
         grid = new int[N][N];
-        random = new Random(12345);
+        random = new Random(123456);
         initializeGrid();
     }
 
@@ -55,11 +55,6 @@ public class MetropolisMonteCarlo {
                 // Calcular magnetización
                 mag = calculateMagnetization();
                 magnetizationHistory.add(mag);
-
-                // verificar estado estacionario
-                if (mcs % 10 == 0 && isStationary(magnetizationHistory, 0.01)) {
-                    System.out.println("Posible estado estacionario detectado en el paso MCS " + mcs);
-                }
             }
 
             // Guardar el historial de magnetización
@@ -136,21 +131,7 @@ public class MetropolisMonteCarlo {
                 sum += grid[i][j];
             }
         }
-        return sum / (N * N);
-    }
-
-    private boolean isStationary(List<Double> magnetizationHistory, double threshold) {
-        if (magnetizationHistory.size() < 10) return false; // Necesitamos suficientes muestras
-
-        // Tomar los últimos 10 valores
-        List<Double> recent = magnetizationHistory.subList(
-                Math.max(0, magnetizationHistory.size() - 10), magnetizationHistory.size());
-
-        double mean = recent.stream().mapToDouble(Double::doubleValue).average().getAsDouble();
-        double variance = recent.stream().mapToDouble(m -> Math.pow(m - mean, 2)).sum() / recent.size();
-        double stdDev = Math.sqrt(variance);
-
-        return stdDev < threshold;
+        return Math.abs(sum / (N * N));
     }
 
     private void writeGridState(int mcs) throws IOException {

@@ -69,7 +69,7 @@ public class MetropolisMonteCarloC {
 
             // Guardar el historial de magnetización y magnetización al cuadrado
             FileWriter magFile = new FileWriter("magnetizacion.txt");
-            magFile.write("# MCS\tM\tM^2\tStationary\n");
+            magFile.write("# MCS\t|M|\tM^2\tStationary\n");
             for (int i = 0; i < magnetizationHistory.size(); i++) {
                 magFile.write(i + "\t" + magnetizationHistory.get(i) + "\t" +
                         magnetizationSquaredHistory.get(i) + "\t" + "\n");
@@ -143,7 +143,7 @@ public class MetropolisMonteCarloC {
                 sum += grid[i][j];
             }
         }
-        return sum / (N * N);
+        return Math.abs(sum / (N * N));
     }
 
     private double calculateSlope(List<Double> values) {
