@@ -145,8 +145,8 @@ class GridVisualizer:
 
         plt.figure(figsize=(10, 6))
         plt.plot(self.mcs_numbers, magnetizations, '-o')
-        plt.xlabel('Paso de Monte Carlo')
-        plt.ylabel('Magnetización promedio')
+        plt.xlabel('MCS')
+        plt.ylabel('$\\langle M \\rangle$')
         plt.grid(True)
         plt.tight_layout()
         plt.show()

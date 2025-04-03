@@ -168,8 +168,8 @@ def plot_magnetization_evolution():
         plt.plot(data['mcs'], np.abs(data['mag']), label=f'p = {p:.3f}')
 
     # Configuración de la gráfica
-    plt.xlabel('Pasos de Monte Carlo (MCS)')
-    plt.ylabel('|Magnetización|')
+    plt.xlabel('MCS')
+    plt.ylabel('M')
     plt.legend()
     plt.grid(True)
 
