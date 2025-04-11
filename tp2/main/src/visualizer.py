@@ -8,7 +8,7 @@ import re
 import os
 
 class GridVisualizer:
-    def __init__(self, results_file, config_file, fps=5):
+    def __init__(self, results_file, config_file, fps):
         self.results_file = results_file
         self.config_file = config_file
         self.fps = fps
@@ -92,25 +92,24 @@ class GridVisualizer:
         # Función para actualizar los frames
         def update_frame(i):
             im.set_array(self.frames[i])
-            title.set_text(f'Paso de Monte Carlo: {self.mcs_numbers[i]}')
-            return [im, title]
+            return [im]
 
         # Crear la animación
         ani = animation.FuncAnimation(
             fig, update_frame, frames=len(self.frames),
-            interval=1000/self.fps, blit=False
+            interval=1000/float(self.fps), blit=False
         )
 
         # Guardar la animación si se especifica un archivo de salida
         if output_file:
             print(f"Guardando animación en {output_file}...")
             if output_file.endswith('.mp4'):
-                ani.save(output_file, writer='ffmpeg', fps=self.fps)
+                ani.save(output_file, writer='ffmpeg', fps=self.fps, codec='libx264')
             elif output_file.endswith('.gif'):
                 ani.save(output_file, writer='pillow', fps=self.fps)
             else:
                 print("Formato de salida no reconocido. Usando .mp4")
-                ani.save(f"{output_file}.mp4", writer='ffmpeg', fps=self.fps)
+                ani.save(f"{output_file}.mp4", writer='ffmpeg', fps=self.fps, codec='libx264')
             print("Animación guardada exitosamente.")
 
         plt.tight_layout()
@@ -158,7 +157,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Visualizador de simulación de Metropolis-Monte Carlo')
     parser.add_argument('results_file', help='Archivo de resultados generado por la simulación')
     parser.add_argument('config_file', help='Archivo de configuración con los parámetros N y p')
-    parser.add_argument('--fps', type=int, default=5, help='Frames por segundo para la animación (default: 5)')
+    parser.add_argument('--fps', type=int, help='Frames por segundo para la animación (default: 5)')
     parser.add_argument('--output', '-o', help='Archivo de salida para la animación (opcional)')
     parser.add_argument('--step', '-s', type=int, help='Mostrar un paso específico (opcional)')
     parser.add_argument('--magnetization', '-m', action='store_true', help='Mostrar gráfico de magnetización')
