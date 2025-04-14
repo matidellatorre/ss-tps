@@ -8,7 +8,6 @@ public class Particle {
     private final double radius;
     private final double mass;
 
-
     public Particle(final Vector position, final Vector velocity, final int id, final double radius, final double mass) {
         this.position = position;
         this.velocity = velocity;
@@ -18,33 +17,30 @@ public class Particle {
         this.mass = mass;
     }
 
-    public final Vector getPosition() {
-        return position;
-    }
-    public final Vector getVelocity() {
-        return velocity;
-    }
-    public final double getRadius() {
-        return radius;
-    }
-    public final double getMass() {
-        return mass;
-    }
-    public final int getCollisionCount() {
-        return collisionCount;
-    }
-    public final int getId() {
-        return id;
+    // Getters
+    public final Vector getPosition() { return position; }
+    public final Vector getVelocity() { return velocity; }
+    public final double getRadius() { return radius; }
+    public final double getMass() { return mass; }
+    public final int getCollisionCount() { return collisionCount; }
+    public final int getId() { return id; }
+
+    // Setters
+    public final void setVelocity(final Vector velocity) {
+        this.velocity = velocity;
     }
 
-    // linea recta con dt
+    public final void increaseCollisionCount() {
+        this.collisionCount++;
+    }
+
+    // Motion: advance in straight line
     public void move(double dt) {
         Vector displacement = velocity.scale(dt);
         this.position = position.add(displacement);
     }
 
-
-    // tiempo hasta que dos particulas colisionen
+    // Collision time with another particle
     public double timeToHit(Particle other) {
         if (this == other) return Double.POSITIVE_INFINITY;
 
@@ -64,37 +60,39 @@ public class Particle {
         return -(dvdr + Math.sqrt(d)) / dvdv;
     }
 
-    // colision entre dos particulas
+    // Collision response with another particle (elastic)
     public void bounceOff(Particle other) {
-        Vector deltaR = other.getPosition().subtract(this.position);
-        Vector deltaV = other.getVelocity().subtract(this.velocity);
+        Vector r1 = this.getPosition();
+        Vector r2 = other.getPosition();
+        Vector v1 = this.getVelocity();
+        Vector v2 = other.getVelocity();
+        Vector deltaR = r2.subtract(r1);
+        Vector deltaV = v2.subtract(v1);
+
+        double distanceSquared = deltaR.dot(deltaR);
+        if (distanceSquared == 0) return;  // overlapping
+
         double dvdr = deltaV.dot(deltaR);
-        double dist = this.radius + other.getRadius();
+        if (dvdr >= 0) return; // moving apart
 
-        // Magnitud del impulso
-        double J = (2 * this.mass * other.getMass() * dvdr) / (dist * (this.mass + other.getMass()));
-        Vector impulse = deltaR.scale(J / dist);
+        double m1 = this.mass;
+        double m2 = other.mass;
 
-        // Actualiza velocidades
-        velocity = velocity.add(impulse.scale(1 / mass));
-        other.setVelocity(other.getVelocity().subtract(impulse.scale(1 / other.getMass())));
+        double scale = (2 * m1 * m2 * dvdr) / ((m1 + m2) * distanceSquared);
+        Vector impulse = deltaR.scale(scale / (m1 + m2));
 
-        collisionCount++;
+        this.setVelocity(v1.add(impulse.scale(1 / m1)));
+        other.setVelocity(v2.subtract(impulse.scale(1 / m2)));
+
+        this.increaseCollisionCount();
         other.increaseCollisionCount();
     }
 
-    public final void setVelocity(final Vector velocity) {
-        this.velocity = velocity;
-    }
-    public final void increaseCollisionCount() {
-        this.collisionCount++;
-    }
-
+    // Collision time with circular boundary
     public double timeToHitCircularBoundary(double containerRadius) {
-        Vector r = getPosition();
-        Vector v = getVelocity();
-
-        double effectiveRadius = containerRadius - getRadius(); // max distance from center before bounce
+        Vector r = this.position;
+        Vector v = this.velocity;
+        double effectiveRadius = containerRadius - this.radius;
 
         double a = v.dot(v);
         double b = 2 * r.dot(v);
@@ -107,22 +105,34 @@ public class Particle {
         double t1 = (-b + sqrtD) / (2 * a);
         double t2 = (-b - sqrtD) / (2 * a);
 
-        double t = Math.min(t1, t2);
-        return t > 0 ? t : Double.POSITIVE_INFINITY;
+        if (t1 > 1e-10 && Double.isFinite(t1)) return t1;
+        if (t2 > 1e-10 && Double.isFinite(t2)) return t2;
+        return Double.POSITIVE_INFINITY;
     }
 
+    // Reflect off circular boundary
     public void bounceOffCircularBoundary() {
-        Vector pos = getPosition();
-        Vector vel = getVelocity();
+        Vector pos = this.position;
+        Vector vel = this.velocity;
 
-        // Normal vector = unit vector from center to collision point
-        Vector normal = pos.direction();
+        Vector normal = pos.direction();  // unit vector pointing outward
+        Vector reflected = vel.subtract(normal.scale(2 * vel.dot(normal)));  // reflection
 
-        // Reflect velocity: v' = v - 2 * (v · n) * n
-        Vector newVel = vel.subtract(normal.scale(2 * vel.dot(normal)));
-
-        setVelocity(newVel);
-        increaseCollisionCount();
+        this.setVelocity(reflected);
+        this.increaseCollisionCount();
     }
 
+    // Equals and hashCode (for sets/maps)
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        Particle other = (Particle) obj;
+        return this.id == other.id;
+    }
+
+    @Override
+    public int hashCode() {
+        return Integer.hashCode(id);
+    }
 }

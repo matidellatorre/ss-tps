@@ -18,14 +18,14 @@ public class Simulation {
 
     private final double L;
     private final Logger logger;
-    private final double updateInterval = 1.0 / 60.0; // PARA RERENDERIZAR el dibujo
+    private final double updateInterval = 1.0 / 10.0; // PARA RERENDERIZAR el dibujo
 
-    public Simulation(List<Particle> particles, final Obstacle obstacle, final double radius, final Logger logger) {
+    public Simulation(List<Particle> particles, final Obstacle obstacle, final double containerDiameter, final Logger logger) {
         this.particles = particles;
         this.obstacle = obstacle;
         this.eventQueue = new EventQueue();
         this.time = 0.0;
-        this.L = radius;
+        this.L = containerDiameter;
         this.logger = logger;
     }
 
@@ -37,8 +37,9 @@ public class Simulation {
         predict(obstacle);
         scheduleUpdate();
 
+        logState();
         // Main simulation loop
-        while (!eventQueue.isEmpty()) {
+        while (!eventQueue.isEmpty() && time < limit) {
             Event event = eventQueue.poll();
             if (!event.isValid()) continue;
 
@@ -46,7 +47,18 @@ public class Simulation {
             Particle b = event.getB();
 
             // Advance time
+            if (!Double.isFinite(event.getTime()) || !Double.isFinite(time)) {
+                System.err.printf("⚠️ Skipping invalid event at time %.6f (event time %.6f)%n", time, event.getTime());
+                continue;
+            }
+
             double dt = event.getTime() - time;
+
+            if (dt < 0 || Double.isNaN(dt)) {
+                System.err.printf("⚠️ Invalid dt=%.6f at time=%.6f for event=%.6f%n", dt, time, event.getTime());
+                continue;
+            }
+
             for (Particle p : particles) p.move(dt);
             obstacle.move(dt);
             time = event.getTime();
@@ -55,13 +67,19 @@ public class Simulation {
             switch (event.getType()) {
                 case PARTICLE_PARTICLE  -> a.bounceOff(b);
                 case WALL_CIRCULAR      -> a.bounceOffCircularBoundary();
-                case OBSTACLE           -> a.bounceOff(b);
+                case OBSTACLE           -> {
+                    if(a == obstacle) {
+                        b.bounceOff(a);
+                    } else {
+                        a.bounceOff(b);
+                    }
+                }
                 case UPDATE -> {
                     logState(); // or render
                     scheduleUpdate();
                 }
             }
-
+            logState();
             // Predict new events for the involved particles
             if (a != null) predict(a);
             if (b != null) predict(b);
@@ -74,7 +92,7 @@ public class Simulation {
 
         // wall collision
         double tBoundary = p.timeToHitCircularBoundary(L / 2.0);
-        if (time + tBoundary <= Double.POSITIVE_INFINITY) {
+        if (tBoundary>0 && Double.isFinite(tBoundary) && Double.isFinite(time + tBoundary)) {
             eventQueue.add(new Event(time + tBoundary, p, null, EventType.WALL_CIRCULAR));
         }
 
@@ -82,14 +100,14 @@ public class Simulation {
         for (Particle other : particles) {
             if (p == other) continue;
             double t = p.timeToHit(other);
-            if (time + t <= Double.POSITIVE_INFINITY)
+            if (t > 0 && Double.isFinite(t) && Double.isFinite(time + t))
                 eventQueue.add(new Event(time + t, p, other, EventType.PARTICLE_PARTICLE));
         }
 
         // Predict particle-obstacle collisions
         if (p != obstacle) {
             double t = p.timeToHit(obstacle);
-            if (time + t <= Double.POSITIVE_INFINITY)
+            if (t > 0 && Double.isFinite(t) && Double.isFinite(time + t))
                 eventQueue.add(new Event(time + t, p, obstacle, EventType.OBSTACLE));
         }
     }

@@ -23,7 +23,7 @@ public class Logger {
 
         if (obstacle != null) {
             Vector pos = obstacle.getPosition();
-            Vector vel = obstacle.getVelocity();
+            Vector vel = obstacle.isStatic() ? new Vector(0, 0) : obstacle.getVelocity();
             writer.printf("p0 %.6f %.6f %.6f %.6f%n",
                     pos.getx(), pos.gety(),
                     vel.getx(), vel.gety());

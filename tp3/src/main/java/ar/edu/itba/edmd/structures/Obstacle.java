@@ -3,7 +3,7 @@ package ar.edu.itba.edmd.structures;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Obstacle extends Particle{
+public class Obstacle extends Particle {
     private final ObstacleType type;
     private final List<Double> timeStamps;
     private final List<Vector> positionHistory;
@@ -35,15 +35,16 @@ public class Obstacle extends Particle{
         if (!isStatic()) {
             super.bounceOff(that);
         } else {
-            Vector deltaR = that.getPosition().subtract(this.getPosition());
-            Vector deltaV = that.getVelocity().subtract(this.getVelocity());
-            double dvdr = deltaV.dot(deltaR);
-            double dist = this.getRadius() + that.getRadius();
+            // Reflect particle velocity as if the obstacle were a fixed, circular wall
+            Vector pPos = that.getPosition();
+            Vector pVel = that.getVelocity();
+            Vector normal = pPos.subtract(this.getPosition()).direction(); // unit outward normal
 
-            double J = (2 * this.getMass() * that.getMass() * dvdr) / (dist * (this.getMass() + that.getMass()));
-            Vector impulse = deltaR.scale(J / dist);
+            // Reflect: v' = v - 2 * (v · n) * n
+            double vDotN = pVel.dot(normal);
+            Vector reflected = pVel.subtract(normal.scale(2 * vDotN));
 
-            that.setVelocity(that.getVelocity().subtract(impulse.scale(1 / that.getMass())));
+            that.setVelocity(reflected);
             that.increaseCollisionCount();
         }
     }
@@ -55,12 +56,12 @@ public class Obstacle extends Particle{
         }
     }
 
-    // Calculate displacement squared relative to initial position
+    // Returns list of mean squared displacements relative to initial position
     public final List<Double> getDisplacementSquaredHistory() {
         List<Double> dcmList = new ArrayList<>();
         if (positionHistory.isEmpty()) return dcmList;
 
-        Vector initial = positionHistory.getFirst();
+        Vector initial = positionHistory.get(0); // fixed: getFirst() doesn't exist in ArrayList
         for (Vector pos : positionHistory) {
             double dx = pos.getx() - initial.getx();
             double dy = pos.gety() - initial.gety();
