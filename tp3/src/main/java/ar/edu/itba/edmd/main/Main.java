@@ -8,7 +8,7 @@ public class Main {
     public static void main(String[] args) {
         SimulationConfig config = new SimulationConfig(
                 0.1,       // container diameter
-                50,       // N particles
+                210,       // N particles
                 0.0005,    // particle radius
                 1.0,       // particle mass
                 0.005,     // obstacle radius

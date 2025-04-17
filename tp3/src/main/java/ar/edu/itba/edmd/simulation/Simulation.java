@@ -35,7 +35,7 @@ public class Simulation {
             predict(p);
         }
         predict(obstacle);
-        scheduleUpdate();
+        //scheduleUpdate();
 
         logState();
         // Main simulation loop
@@ -60,13 +60,26 @@ public class Simulation {
             }
 
             for (Particle p : particles) p.move(dt);
+
+            for (int i = 0; i < particles.size(); i++) {
+                for (int j = i + 1; j < particles.size(); j++) {
+                    Particle p1 = particles.get(i);
+                    Particle p2 = particles.get(j);
+                    double dist = p1.getPosition().distanceTo(p2.getPosition());
+                    if (dist < p1.getRadius() + p2.getRadius() - 1e-6) {
+                        System.err.printf("⚠️ Overlap: p%d and p%d at time %.4f | dist=%.6f\n",
+                                p1.getId(), p2.getId(), time, dist);
+                    }
+                }
+            }
+
             obstacle.move(dt);
             time = event.getTime();
 
             // Execute the event
             switch (event.getType()) {
                 case PARTICLE_PARTICLE  -> a.bounceOff(b);
-                case WALL_CIRCULAR      -> a.bounceOffCircularBoundary();
+                case WALL_CIRCULAR      -> a.bounceOffCircularBoundary(L/2);
                 case OBSTACLE           -> {
                     if(a == obstacle) {
                         b.bounceOff(a);
@@ -75,14 +88,23 @@ public class Simulation {
                     }
                 }
                 case UPDATE -> {
-                    logState(); // or render
-                    scheduleUpdate();
+                    //logState(); // or render
+                    //scheduleUpdate();
                 }
             }
             logState();
             // Predict new events for the involved particles
             if (a != null) predict(a);
             if (b != null) predict(b);
+
+            for (Particle p : particles) {
+                double r = p.getPosition().magnitude();
+                if (r > (L / 2.0 - p.getRadius())) {
+                    System.err.printf("⚠️ Particle %d escaped container: r = %.6f > max = %.6f at t = %.4f\n In event: %s\n",
+                            p.getId(), r, (L / 2.0 - p.getRadius()), time, event.getType());
+                }
+            }
+
         }
         logger.close();
     }
@@ -98,9 +120,9 @@ public class Simulation {
 
         // Predict particle-particle collisions
         for (Particle other : particles) {
-            if (p == other) continue;
+            if (p == other || p.getId() >= other.getId()) continue;
             double t = p.timeToHit(other);
-            if (t > 0 && Double.isFinite(t) && Double.isFinite(time + t))
+            if (t > 1e-10 && Double.isFinite(t) && Double.isFinite(time + t))
                 eventQueue.add(new Event(time + t, p, other, EventType.PARTICLE_PARTICLE));
         }
 

@@ -53,11 +53,23 @@ public class Particle {
         double dvdv = deltaV.dot(deltaV);
         double drdr = deltaR.dot(deltaR);
         double sigma = this.radius + other.radius;
+
+        double distance = deltaR.magnitude();
+        if (distance < this.radius + other.radius - 1e-6) {
+            // Particles are too close / overlapping — skip or resolve manually
+            return Double.POSITIVE_INFINITY;
+        }
+
         double d = (dvdr * dvdr) - dvdv * (drdr - sigma * sigma);
 
         if (d < 0) return Double.POSITIVE_INFINITY;
 
-        return -(dvdr + Math.sqrt(d)) / dvdv;
+        double t = -(dvdr + Math.sqrt(d)) / dvdv;
+
+        if (Double.isNaN(t)) {
+            System.err.printf("🚨 NaN collision time between p%d and p%d with time %.4f\n", this.getId(), other.getId(), t);
+        }
+        return t;
     }
 
     // Collision response with another particle (elastic)
@@ -111,7 +123,7 @@ public class Particle {
     }
 
     // Reflect off circular boundary
-    public void bounceOffCircularBoundary() {
+    public void bounceOffCircularBoundary(double containerRadius) {
         Vector pos = this.position;
         Vector vel = this.velocity;
 
@@ -120,6 +132,11 @@ public class Particle {
 
         this.setVelocity(reflected);
         this.increaseCollisionCount();
+
+        double maxR = containerRadius - this.getRadius();
+        if (pos.magnitude() > maxR) {
+            this.position = normal.scale(maxR - 1e-6);
+        }
     }
 
     // Equals and hashCode (for sets/maps)
