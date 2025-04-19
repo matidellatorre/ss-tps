@@ -7,6 +7,7 @@ import ar.edu.itba.edmd.structures.Obstacle;
 import ar.edu.itba.edmd.structures.Particle;
 import ar.edu.itba.edmd.utils.Logger;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class Simulation {
@@ -31,36 +32,71 @@ public class Simulation {
 
     public void simulate(double limit) {
         // Schedule initial events
-        for (Particle p : particles) {
-            predict(p);
-        }
+        for (Particle p : particles) predict(p);
         predict(obstacle);
-        //scheduleUpdate();
-
         logState();
+
         // Main simulation loop
         while (!eventQueue.isEmpty() && time < limit) {
-            Event event = eventQueue.poll();
-            if (!event.isValid()) continue;
+            Event e = eventQueue.poll();
+            if (!e.isValid()) continue;
 
-            Particle a = event.getA();
-            Particle b = event.getB();
+            double nextTime = e.getTime();
 
-            // Advance time
-            if (!Double.isFinite(event.getTime()) || !Double.isFinite(time)) {
-                System.err.printf("⚠️ Skipping invalid event at time %.6f (event time %.6f)%n", time, event.getTime());
+            // Skip invalid times
+            if (!Double.isFinite(nextTime) || !Double.isFinite(time)) {
+                System.err.printf("⚠️ Skipping invalid event at time %.6f (event time %.6f)%n", time, nextTime);
                 continue;
             }
 
-            double dt = event.getTime() - time;
-
+            double dt = nextTime - time;
             if (dt < 0 || Double.isNaN(dt)) {
-                System.err.printf("⚠️ Invalid dt=%.6f at time=%.6f for event=%.6f%n", dt, time, event.getTime());
+                System.err.printf("⚠️ Invalid dt=%.6f at time=%.6f for event=%.6f%n", dt, time, nextTime);
                 continue;
             }
 
+            // ✅ Move all particles only once
             for (Particle p : particles) p.move(dt);
+            obstacle.move(dt);
+            time = nextTime;
 
+            // 🔁 Gather all events with the same timestamp
+            List<Event> batch = new ArrayList<>();
+            batch.add(e);
+            while (!eventQueue.isEmpty() && Math.abs(eventQueue.peek().getTime() - time) < 1e-10) {
+                batch.add(eventQueue.poll());
+            }
+
+            // ✅ Process batch of simultaneous events
+            for (Event event : batch) {
+                if (!event.isValid()) continue;
+
+                Particle a = event.getA();
+                Particle b = event.getB();
+
+                switch (event.getType()) {
+                    case PARTICLE_PARTICLE  -> a.bounceOff(b);
+                    case WALL_CIRCULAR      -> a.bounceOffCircularBoundary(L / 2);
+                    case OBSTACLE           -> {
+                        if (a == obstacle) {
+                            b.bounceOff(a);
+                        } else {
+                            a.bounceOff(b);
+                        }
+                    }
+                    case UPDATE -> {
+                        // logState(); // or render
+                        // scheduleUpdate();
+                    }
+                }
+
+                logState(); // optional: track state after each event
+
+                if (a != null) predict(a);
+                if (b != null) predict(b);
+            }
+
+            // ✅ Post-frame diagnostics
             for (int i = 0; i < particles.size(); i++) {
                 for (int j = i + 1; j < particles.size(); j++) {
                     Particle p1 = particles.get(i);
@@ -73,41 +109,18 @@ public class Simulation {
                 }
             }
 
-            obstacle.move(dt);
-            time = event.getTime();
-
-            // Execute the event
-            switch (event.getType()) {
-                case PARTICLE_PARTICLE  -> a.bounceOff(b);
-                case WALL_CIRCULAR      -> a.bounceOffCircularBoundary(L/2);
-                case OBSTACLE           -> {
-                    if(a == obstacle) {
-                        b.bounceOff(a);
-                    } else {
-                        a.bounceOff(b);
-                    }
-                }
-                case UPDATE -> {
-                    //logState(); // or render
-                    //scheduleUpdate();
-                }
-            }
-            logState();
-            // Predict new events for the involved particles
-            if (a != null) predict(a);
-            if (b != null) predict(b);
-
             for (Particle p : particles) {
                 double r = p.getPosition().magnitude();
                 if (r > (L / 2.0 - p.getRadius())) {
                     System.err.printf("⚠️ Particle %d escaped container: r = %.6f > max = %.6f at t = %.4f\n In event: %s\n",
-                            p.getId(), r, (L / 2.0 - p.getRadius()), time, event.getType());
+                            p.getId(), r, (L / 2.0 - p.getRadius()), time, e.getType());
                 }
             }
-
         }
+
         logger.close();
     }
+
 
     private void predict(Particle p) {
         if (p == null) return;

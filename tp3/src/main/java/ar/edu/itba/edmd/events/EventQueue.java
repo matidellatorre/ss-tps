@@ -9,6 +9,10 @@ public class EventQueue {
         this.queue = new PriorityQueue<>();
     }
 
+    public Event peek() {
+        return queue.peek();
+    }
+
     public void add(Event event) {
         queue.add(event);
     }
