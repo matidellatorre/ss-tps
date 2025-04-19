@@ -2,6 +2,7 @@ from matplotlib.animation import FuncAnimation
 import matplotlib.pyplot as plt
 import pandas as pd
 import re
+import matplotlib.patches as patches
 
 
 def parse_simulation_output(file_path):
@@ -46,12 +47,16 @@ ax.set_ylim(-container_radius * 1.2, container_radius * 1.2)
 ax.set_aspect('equal')
 time_text = ax.text(0.02, 0.95, '', transform=ax.transAxes)
 
+# Add circular container boundary
+container_circle = patches.Circle((0, 0), container_radius, fill=False, color='black', linewidth=1)
+ax.add_patch(container_circle)
+
 def update(frame_idx):
     time, particles = snapshots[frame_idx]
     x = [p[1] for p in particles]
     y = [p[2] for p in particles]
     scat.set_offsets(list(zip(x, y)))
-    time_text.set_text(f'time = {time:.4f}s')
+    # time_text.set_text(f'time = {time:.4f}s')
     return scat, time_text
 
 anim = FuncAnimation(fig, update, frames=len(snapshots), interval=10, blit=True)
