@@ -29,6 +29,14 @@ public class Particle {
     public final void setVelocity(final Vector velocity) {
         this.velocity = velocity;
     }
+    
+    /**
+     * Method to manually correct particle position when overlaps are detected
+     * Only use in emergency overlap situations
+     */
+    public final void correctPosition(double dx, double dy) {
+        this.position = new Vector(position.getx() + dx, position.gety() + dy);
+    }
 
     public final void increaseCollisionCount() {
         this.collisionCount++;
@@ -57,6 +65,8 @@ public class Particle {
         double distance = deltaR.magnitude();
         if (distance < this.radius + other.radius - 1e-6) {
             // Particles are too close / overlapping — skip or resolve manually
+            System.err.printf("⚠️ Overlap detected in timeToHit: p%d and p%d, distance=%.6f, minimum=%.6f\n", 
+                    this.getId(), other.getId(), distance, this.radius + other.radius);
             return Double.POSITIVE_INFINITY;
         }
 
@@ -82,10 +92,22 @@ public class Particle {
         Vector deltaV = v2.subtract(v1);
 
         double distanceSquared = deltaR.dot(deltaR);
-        if (distanceSquared == 0) return;  // overlapping
+        if (distanceSquared == 0) {
+            System.err.printf("⚠️ Zero distance in bounceOff between p%d and p%d\n", this.getId(), other.getId());
+            // Apply a small jitter to avoid infinite forces
+            double jitter = 1e-6;
+            this.correctPosition(-jitter, -jitter);
+            other.correctPosition(jitter, jitter);
+            deltaR = other.getPosition().subtract(this.getPosition());
+            distanceSquared = deltaR.dot(deltaR);
+            if (distanceSquared == 0) return; // If still zero, give up
+        }
 
         double dvdr = deltaV.dot(deltaR);
-        if (dvdr >= 0) return; // moving apart
+        if (dvdr >= 0) {
+            System.err.printf("⚠️ Particles p%d and p%d moving apart in bounceOff, skipping\n", this.getId(), other.getId());
+            return; // moving apart
+        }
 
         double m1 = this.mass;
         double m2 = other.mass;
@@ -107,6 +129,8 @@ public class Particle {
         double effectiveRadius = containerRadius - this.radius;
 
         double a = v.dot(v);
+        if (Math.abs(a) < 1e-10) return Double.POSITIVE_INFINITY; // Particle not moving
+
         double b = 2 * r.dot(v);
         double c = r.dot(r) - effectiveRadius * effectiveRadius;
 
@@ -116,6 +140,12 @@ public class Particle {
         double sqrtD = Math.sqrt(discriminant);
         double t1 = (-b + sqrtD) / (2 * a);
         double t2 = (-b - sqrtD) / (2 * a);
+
+        // Check if particle is already outside boundary
+        if (r.magnitude() > effectiveRadius + 1e-6) {
+            System.err.printf("⚠️ Particle %d already outside boundary in timeToHitCircularBoundary\n", this.getId());
+            return 0.0; // Immediate collision
+        }
 
         if (t1 > 1e-10 && Double.isFinite(t1)) return t1;
         if (t2 > 1e-10 && Double.isFinite(t2)) return t2;
@@ -135,7 +165,9 @@ public class Particle {
 
         double maxR = containerRadius - this.getRadius();
         if (pos.magnitude() > maxR) {
+            // If already outside boundary, move it back inside
             this.position = normal.scale(maxR - 1e-6);
+            System.err.printf("⚠️ Corrected position of particle %d that was outside boundary\n", this.getId());
         }
     }
 
