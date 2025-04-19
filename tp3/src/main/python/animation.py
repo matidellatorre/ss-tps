@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import re
 import matplotlib.patches as patches
+import numpy as np
 
 
 def parse_simulation_output(file_path):
@@ -41,11 +42,13 @@ container_radius = 0.05  # 0.1m diameter
 
 # Initialize figure
 fig, ax = plt.subplots()
-scat = ax.scatter([], [], s=10)
+# Create two scatter plots - one for p0 (the obstacle) and one for other particles
+obstacle = ax.scatter([], [], s=450, color='red')  # s=50 for radius=0.005
+other_particles = ax.scatter([], [], s=10, color='blue')
 ax.set_xlim(-container_radius * 1.2, container_radius * 1.2)
 ax.set_ylim(-container_radius * 1.2, container_radius * 1.2)
 ax.set_aspect('equal')
-time_text = ax.text(0.02, 0.95, '', transform=ax.transAxes)
+ax.axis('off')
 
 # Add circular container boundary
 container_circle = patches.Circle((0, 0), container_radius, fill=False, color='black', linewidth=1)
@@ -53,11 +56,29 @@ ax.add_patch(container_circle)
 
 def update(frame_idx):
     time, particles = snapshots[frame_idx]
-    x = [p[1] for p in particles]
-    y = [p[2] for p in particles]
-    scat.set_offsets(list(zip(x, y)))
-    # time_text.set_text(f'time = {time:.4f}s')
-    return scat, time_text
+
+    # Separate p0 from the rest of particles
+    p0_data = []
+    other_particles_data = []
+
+    for p in particles:
+        if p[0] == 0:  # This is p0 (obstacle)
+            p0_data.append((p[1], p[2]))
+        else:
+            other_particles_data.append((p[1], p[2]))
+
+    # Update scatter plots
+    if p0_data:
+        obstacle.set_offsets(p0_data)
+    else:
+        obstacle.set_offsets([])
+
+    if other_particles_data:
+        other_particles.set_offsets(other_particles_data)
+    else:
+        other_particles.set_offsets([])
+
+    return obstacle, other_particles
 
 anim = FuncAnimation(fig, update, frames=len(snapshots), interval=10, blit=True)
 plt.show()
