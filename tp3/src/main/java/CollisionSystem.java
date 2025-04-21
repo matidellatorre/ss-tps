@@ -84,26 +84,32 @@ public class CollisionSystem {
         writer.close();
     }
 
-    // Example of usage in main
     public static void main(String[] args) throws IOException {
-        int N = 200;           // number of particles
-        double L = 0.1;        // diameter
-        double R_obs = 0.005;  // obstacle radius
+        int N = 200;
+        double L = 0.1;
+        double R_obs = 0.005;
         double r = 5e-4;
         double m = 1.0;
         double v0 = 1.0;
         int N_events = 10000;
         int recordEvery = 1;
+
         Particle[] particles = new Particle[N];
         Random rand = new Random();
 
-        // initialize random non-overlapping positions
+        double containerLimit = L/2 - r;
+        double obstacleLimitSq = (R_obs + r) * (R_obs + r);
+
         for (int i = 0; i < N; i++) {
             boolean placed = false;
             while (!placed) {
-                double x = (rand.nextDouble()*2-1)*(L/2 - r);
-                double y = (rand.nextDouble()*2-1)*(L/2 - r);
-                if (x*x + y*y > (L/2 - r)*(L/2 - r)) continue;
+                double x = (rand.nextDouble()*2 - 1) * containerLimit;
+                double y = (rand.nextDouble()*2 - 1) * containerLimit;
+                double distSq = x*x + y*y;
+                // inside container?
+                if (distSq > containerLimit*containerLimit) continue;
+                // outside obstacle?
+                if (distSq < obstacleLimitSq) continue;
                 boolean ok = true;
                 for (int j = 0; j < i; j++) {
                     double dx = x - particles[j].x;
