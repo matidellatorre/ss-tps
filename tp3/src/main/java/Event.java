@@ -1,4 +1,3 @@
-/** Represents a collision event between two particles or a wall/obstacle. */
 class Event implements Comparable<Event> {
     final double time;
     final Particle a, b;

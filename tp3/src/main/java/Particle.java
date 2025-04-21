@@ -19,13 +19,11 @@ class Particle {
         this.mass = m;
     }
 
-    // Move particle in straight line for time dt
     public void move(double dt) {
         x += vx * dt;
         y += vy * dt;
     }
 
-    // Time to collide with another particle (elastic)
     public double timeToHit(Particle that) {
         if (this == that) return Double.POSITIVE_INFINITY;
         double dx = that.x - this.x;
@@ -42,38 +40,37 @@ class Particle {
         return -(dvdr + Math.sqrt(d)) / dvdv;
     }
 
-    // Time to hit circular wall of radius R_container
     public double timeToHitWall(double R_container) {
-        // Solve |(x + vx*t, y + vy*t)| = R_container - radius
         double R = R_container - this.radius;
         double b = 2*(x*vx + y*vy);
         double c = x*x + y*y - R*R;
-        double disc = b*b - 4* (vx*vx + vy*vy) * c;
+        double disc = b*b - 4*(vx*vx + vy*vy)*c;
         if (disc < 0) return Double.POSITIVE_INFINITY;
         double sqrt = Math.sqrt(disc);
-        double t1 = (-b + sqrt) / (2*(vx*vx+vy*vy));
-        double t2 = (-b - sqrt) / (2*(vx*vx+vy*vy));
-        double t = (t1>1e-10? t1 : (t2>1e-10? t2 : Double.POSITIVE_INFINITY));
+        double denom = 2*(vx*vx + vy*vy);
+        double t1 = (-b + sqrt) / denom;
+        double t2 = (-b - sqrt) / denom;
+        double t = (t1 > 1e-10 ? t1 : (t2 > 1e-10 ? t2 : Double.POSITIVE_INFINITY));
         return t;
     }
 
-    // Time to hit a (fixed) circular obstacle at (0,0) of radius R_obs
     public double timeToHitObstacle(double R_obs) {
-        // identical to wall but inner circle
         double R = R_obs + this.radius;
         double b = 2*(x*vx + y*vy);
         double c = x*x + y*y - R*R;
-        double disc = b*b - 4*(vx*vx+vy*vy)*c;
+        double disc = b*b - 4*(vx*vx + vy*vy)*c;
         if (disc < 0) return Double.POSITIVE_INFINITY;
         double sqrt = Math.sqrt(disc);
-        // We want the smallest positive root
-        double t1 = (-b + sqrt)/(2*(vx*vx+vy*vy));
-        double t2 = (-b - sqrt)/(2*(vx*vx+vy*vy));
-        double t = (t2>1e-10? t2 : (t1>1e-10? t1 : Double.POSITIVE_INFINITY));
+        double denom = 2*(vx*vx + vy*vy);
+        double t1 = (-b + sqrt) / denom;
+        double t2 = (-b - sqrt) / denom;
+        double t = (t2 > 1e-10 ? t2 : (t1 > 1e-10 ? t1 : Double.POSITIVE_INFINITY));
         return t;
     }
 
-    // Bounce off another particle elastically
+    /**
+     * Elastic collision impulse with another particle
+     */
     public void bounceOff(Particle that) {
         double dx = that.x - this.x;
         double dy = that.y - this.y;
@@ -81,7 +78,6 @@ class Particle {
         double dvy = that.vy - this.vy;
         double dvdr = dx*dvx + dy*dvy;
         double dist = this.radius + that.radius;
-        // magnitude of normal force
         double J = 2 * this.mass * that.mass * dvdr / ((this.mass + that.mass) * dist);
         double Jx = J * dx / dist;
         double Jy = J * dy / dist;
@@ -92,27 +88,33 @@ class Particle {
         this.collisionCount++; that.collisionCount++;
     }
 
-    // Bounce off container wall
-    public void bounceOffWall() {
-        // normal is radial: (x,y)
+    /**
+     * Elastic bounce on container wall; returns momentum change magnitude Δp
+     */
+    public double bounceOffWall() {
         double norm = Math.sqrt(x*x + y*y);
         double nx = x / norm;
         double ny = y / norm;
-        double dot = vx*nx + vy*ny;
-        vx -= 2*dot*nx;
-        vy -= 2*dot*ny;
+        double vn = vx*nx + vy*ny;  // normal component
+        double deltaP = 2 * mass * Math.abs(vn);
+        vx -= 2*vn*nx;
+        vy -= 2*vn*ny;
         collisionCount++;
+        return deltaP;
     }
 
-    // Bounce off fixed obstacle
-    public void bounceOffObstacle(double R_obs) {
-        // normal from obstacle center at (0,0)
+    /**
+     * Elastic bounce on fixed obstacle; returns momentum change magnitude Δp
+     */
+    public double bounceOffObstacle() {
         double norm = Math.sqrt(x*x + y*y);
         double nx = x / norm;
         double ny = y / norm;
-        double dot = vx*nx + vy*ny;
-        vx -= 2*dot*nx;
-        vy -= 2*dot*ny;
+        double vn = vx*nx + vy*ny;
+        double deltaP = 2 * mass * Math.abs(vn);
+        vx -= 2*vn*nx;
+        vy -= 2*vn*ny;
         collisionCount++;
+        return deltaP;
     }
 }

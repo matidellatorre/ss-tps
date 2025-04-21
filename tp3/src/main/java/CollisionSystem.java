@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.util.PriorityQueue;
 import java.util.Random;
 
-/** Core simulation: event-driven loop. */
 public class CollisionSystem {
     private Particle[] particles;
     private PriorityQueue<Event> pq;
@@ -19,69 +18,99 @@ public class CollisionSystem {
         this.pq = new PriorityQueue<>();
     }
 
-    // Predict future events for particle a
     private void predict(Particle a) {
         if (a == null) return;
-        // particle-particle
         for (Particle b : particles) {
             double dt = a.timeToHit(b);
             if (dt < Double.POSITIVE_INFINITY) pq.add(new Event(time + dt, a, b));
         }
-        // particle-wall
         double dtWall = a.timeToHitWall(containerRadius);
         if (dtWall < Double.POSITIVE_INFINITY) pq.add(new Event(time + dtWall, a, null));
-        // particle-obstacle
         double dtObs = a.timeToHitObstacle(obstacleRadius);
         if (dtObs < Double.POSITIVE_INFINITY) pq.add(new Event(time + dtObs, a, a));
     }
 
-    // Initialize event queue
     private void initPQ() {
         pq.clear();
-        for (Particle p : particles) {
-            predict(p);
-        }
-        // Redraw / record event marker
+        for (Particle p : particles) predict(p);
         pq.add(new Event(time, null, null));
     }
 
-    // Simulate until processedevents events, recording at each
+    /**
+     * Runs the simulation, recording state and pressure
+     */
     public void simulate(int maxEvents, String outputFile, int recordEvery) throws IOException {
-        BufferedWriter writer = new BufferedWriter(new FileWriter(outputFile));
+        BufferedWriter stateWriter = new BufferedWriter(new FileWriter(outputFile));
+        BufferedWriter pressureWriter = new BufferedWriter(new FileWriter("pressure_time.txt"));
+        // header for pressure file
+        pressureWriter.write("time pressure_walls pressure_obstacle\n");
+
+        double interval = 0.01;
+        double nextPressureTime = interval;
+        int wallHits = 0;
+        double wallDeltaPSum = 0.0;
+        int obsHits = 0;
+        double obsDeltaPSum = 0.0;
+
+        double containerPerimeter = 2 * Math.PI * containerRadius;
+        double obstaclePerimeter  = 2 * Math.PI * obstacleRadius;
+
         initPQ();
         int eventsProcessed = 0;
+
         while (eventsProcessed < maxEvents && !pq.isEmpty()) {
             Event e = pq.poll();
             if (!e.isValid()) continue;
 
-            // Move all particles to event time
-            for (Particle p : particles) {
-                p.move(e.time - time);
-            }
+            // move to next event time
+            for (Particle p : particles) p.move(e.time - time);
             time = e.time;
 
-            // Process event
-            if      (e.a != null && e.b != null && e.a != e.b) e.a.bounceOff(e.b);
-            else if (e.a != null && e.b == null)             e.a.bounceOffWall();
-            else if (e.a != null && e.b == e.a)               e.a.bounceOffObstacle(obstacleRadius);
-            // else: record-only event marker
+            // process collision and accumulate Δp
+            if (e.a != null && e.b == null) {
+                // wall hit
+                double dp = e.a.bounceOffWall();
+                wallHits++;
+                wallDeltaPSum += dp;
+            }
+            else if (e.a != null && e.b == e.a) {
+                // obstacle hit
+                double dp = e.a.bounceOffObstacle();
+                obsHits++;
+                obsDeltaPSum += dp;
+            }
+            else if (e.a != null && e.b != null && e.a != e.b) {
+                e.a.bounceOff(e.b);
+            }
 
-            // Re-predict for affected particles
+            // re-predict for affected particles
             if (e.a != null) predict(e.a);
             if (e.b != null && e.b != e.a) predict(e.b);
 
-            // record state
-            if (e.a == null && e.b == null || eventsProcessed % recordEvery == 0) {
-                writer.write(String.format("e%d %.6f\n", eventsProcessed+1, time));
+            // record state if needed
+            if ((e.a == null && e.b == null) || eventsProcessed % recordEvery == 0) {
+                stateWriter.write(String.format("e%d %.6f\n", eventsProcessed+1, time));
                 for (int i = 0; i < particles.length; i++) {
                     Particle p = particles[i];
-                    writer.write(String.format("p%d %.6f %.6f %.6f %.6f\n",
+                    stateWriter.write(String.format("p%d %.6f %.6f %.6f %.6f\n",
                             i+1, p.x, p.y, p.vx, p.vy));
                 }
             }
             eventsProcessed++;
+
+            // output pressure at fixed time intervals
+            while (time >= nextPressureTime) {
+                double pWall = (wallDeltaPSum / interval) / containerPerimeter;
+                double pObs  = (obsDeltaPSum  / interval) / obstaclePerimeter;
+                pressureWriter.write(String.format("%.6f %.6f %.6f\n", nextPressureTime, pWall, pObs));
+                // reset counters for next interval
+                nextPressureTime += interval;
+                wallHits = 0; wallDeltaPSum = 0.0;
+                obsHits  = 0; obsDeltaPSum  = 0.0;
+            }
         }
-        writer.close();
+        stateWriter.close();
+        pressureWriter.close();
     }
 
     public static void main(String[] args) throws IOException {
@@ -91,7 +120,7 @@ public class CollisionSystem {
         double r = 5e-4;
         double m = 1.0;
         double v0 = 1.0;
-        int N_events = 10000;
+        int N_events = 100000;
         int recordEvery = 1;
 
         Particle[] particles = new Particle[N];
@@ -106,9 +135,7 @@ public class CollisionSystem {
                 double x = (rand.nextDouble()*2 - 1) * containerLimit;
                 double y = (rand.nextDouble()*2 - 1) * containerLimit;
                 double distSq = x*x + y*y;
-                // inside container?
                 if (distSq > containerLimit*containerLimit) continue;
-                // outside obstacle?
                 if (distSq < obstacleLimitSq) continue;
                 boolean ok = true;
                 for (int j = 0; j < i; j++) {
