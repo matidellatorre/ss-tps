@@ -3,6 +3,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.PriorityQueue;
 import java.util.Random;
+import java.util.HashSet;
+import java.util.Set;
 
 public class CollisionSystem {
     private Particle[] particles;
@@ -10,12 +12,16 @@ public class CollisionSystem {
     private double time = 0.0;
     private final double containerRadius;
     private final double obstacleRadius;
+    private Set<Particle> particlesHitObstacle;  // Track particles that have hit obstacle
+    private int totalObstacleCollisions;         // Track total obstacle collisions
 
     public CollisionSystem(Particle[] particles, double L, double R_obs) {
         this.particles = particles;
         this.containerRadius = L/2.0;
         this.obstacleRadius = R_obs;
         this.pq = new PriorityQueue<>();
+        this.particlesHitObstacle = new HashSet<>();
+        this.totalObstacleCollisions = 0;
     }
 
     private void predict(Particle a) {
@@ -42,8 +48,12 @@ public class CollisionSystem {
     public void simulate(int maxEvents, String outputFile, int recordEvery, double v0) throws IOException {
         BufferedWriter stateWriter = new BufferedWriter(new FileWriter(outputFile));
         BufferedWriter pressureWriter = new BufferedWriter(new FileWriter("./results/pressure_time_v"+v0+".txt"));
+        BufferedWriter collisionWriter = new BufferedWriter(new FileWriter("./results/collisions_count_v"+v0+".txt"));
+        
         // header for pressure file
         pressureWriter.write("time pressure_walls pressure_obstacle\n");
+        // header for collision counts file
+        collisionWriter.write("event first_obstacle_col all_obstacle_col\n");
 
         double interval = 0.01;
         double nextPressureTime = interval;
@@ -78,6 +88,12 @@ public class CollisionSystem {
                 double dp = e.a.bounceOffObstacle();
                 obsHits++;
                 obsDeltaPSum += dp;
+                totalObstacleCollisions++;
+                
+                // Check if this is the first time this particle hits the obstacle
+                if (!particlesHitObstacle.contains(e.a)) {
+                    particlesHitObstacle.add(e.a);
+                }
             }
             else if (e.a != null && e.b != null && e.a != e.b) {
                 e.a.bounceOff(e.b);
@@ -95,6 +111,11 @@ public class CollisionSystem {
                     stateWriter.write(String.format("p%d %.6f %.6f %.6f %.6f\n",
                             i+1, p.x, p.y, p.vx, p.vy));
                 }
+                // Write collision counts
+                collisionWriter.write(String.format("e%d %d %d\n", 
+                    eventsProcessed+1, 
+                    particlesHitObstacle.size(), 
+                    totalObstacleCollisions));
             }
             eventsProcessed++;
 
@@ -111,6 +132,7 @@ public class CollisionSystem {
         }
         stateWriter.close();
         pressureWriter.close();
+        collisionWriter.close();
     }
 
     public static void main(String[] args) throws IOException {
@@ -119,7 +141,7 @@ public class CollisionSystem {
         double R_obs = 0.005;
         double r = 5e-4;
         double m = 1.0;
-        double v0 = 10.0;
+        double v0 = 6.0;
         int N_events = 100000;
         int recordEvery = 1;
 
