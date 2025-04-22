@@ -39,9 +39,9 @@ public class CollisionSystem {
     /**
      * Runs the simulation, recording state and pressure
      */
-    public void simulate(int maxEvents, String outputFile, int recordEvery) throws IOException {
+    public void simulate(int maxEvents, String outputFile, int recordEvery, double v0) throws IOException {
         BufferedWriter stateWriter = new BufferedWriter(new FileWriter(outputFile));
-        BufferedWriter pressureWriter = new BufferedWriter(new FileWriter("pressure_time.txt"));
+        BufferedWriter pressureWriter = new BufferedWriter(new FileWriter("./results/pressure_time_v"+v0+".txt"));
         // header for pressure file
         pressureWriter.write("time pressure_walls pressure_obstacle\n");
 
@@ -119,7 +119,7 @@ public class CollisionSystem {
         double R_obs = 0.005;
         double r = 5e-4;
         double m = 1.0;
-        double v0 = 1.0;
+        double v0 = 10.0;
         int N_events = 100000;
         int recordEvery = 1;
 
@@ -153,6 +153,6 @@ public class CollisionSystem {
         }
 
         CollisionSystem sim = new CollisionSystem(particles, L, R_obs);
-        sim.simulate(N_events, "simulation.txt", recordEvery);
+        sim.simulate(N_events, "./results/simulation_v"+v0+".txt", recordEvery, v0);
     }
 }

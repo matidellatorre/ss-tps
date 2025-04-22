@@ -61,7 +61,7 @@ def main():
     container_radius = 0.05  # Radio del contenedor (L/2)
     obstacle_radius = 0.005  # Radio del obstáculo
     particle_radius = 0.0005  # Radio de las partículas
-    file_path = "/home/gasti/Documents/ITBA/Materias/CuatriActual/SS/ss-tps/tp3/simulation.txt"
+    file_path = "./results/simulation.txt"
 
     stream = SimulationStream(file_path)
     stream.preload_buffer()
