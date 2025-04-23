@@ -19,20 +19,19 @@ for v in velocities:
         for line in f:
             parts = line.strip().split()
             if len(parts) >= 4:  # Ensure we have all required columns
-                current_time = float(parts[3])
-                if current_time <= 6.0:  # Only include data points up to 6 seconds
-                    all_collisions.append(int(parts[1]))  # first_obstacle_col is the second column
-                    time.append(current_time)  # time is the fourth column
+                all_collisions.append(int(parts[2]))  # all_obstacle_col is the third column
+                time.append(float(parts[3]))  # time is the fourth column
     
     # Plot the data
     plt.plot(time, all_collisions, label=f'v = {v} m/s')
 
 # Customize the plot
-plt.xlabel('Tiempo (s)', fontsize=18)
-plt.ylabel('Particulas colisionadas', fontsize=18)
+plt.xlabel('Tiempo (s)', fontsize=12)
+plt.ylabel('Particulas colisionadas', fontsize=12)
+plt.title('Evolución de colisiones con el obstáculo', fontsize=14)
 plt.grid(True, linestyle='--', alpha=0.7)
-plt.legend(fontsize=18)
+plt.legend(fontsize=10)
 
-# Show the plot
-plt.show()
+# Save the plot
+plt.savefig('./results/collisions_evolution.png', dpi=300, bbox_inches='tight')
 plt.close() 
