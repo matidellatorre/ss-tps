@@ -43,7 +43,7 @@ public class CollisionSystem {
     /**
      * Runs the simulation, recording state and pressure
      */
-    public void simulate(int maxEvents, String outputFile, int recordEvery, double v0) throws IOException {
+    public void simulate(double maxTime, String outputFile, int recordEvery, double v0) throws IOException {
         BufferedWriter stateWriter = new BufferedWriter(new FileWriter(outputFile));
         BufferedWriter pressureWriter = new BufferedWriter(new FileWriter("./results/pressure_time_v"+v0+".txt"));
         BufferedWriter collisionWriter = new BufferedWriter(new FileWriter("./results/collisions_count_v"+v0+".txt"));
@@ -66,7 +66,7 @@ public class CollisionSystem {
         initPQ();
         int eventsProcessed = 0;
 
-        while (eventsProcessed < maxEvents && !pq.isEmpty()) {
+        while (time < maxTime && !pq.isEmpty()) {
             Event e = pq.poll();
             if (!e.isValid()) continue;
 
@@ -137,8 +137,8 @@ public class CollisionSystem {
         double R_obs = 0.005;
         double r = 5e-4;
         double m = 1.0;
-        double v0 = 6.0;
-        int N_events = 100000;
+        double v0 = 10.0; //TODO: IR cambiando esto antes de correrlo
+        double maxTime = 10.0;
         int recordEvery = 1;
 
         Particle[] particles = new Particle[N];
@@ -171,6 +171,6 @@ public class CollisionSystem {
         }
 
         CollisionSystem sim = new CollisionSystem(particles, L, R_obs);
-        sim.simulate(N_events, "./results/simulation_v"+v0+".txt", recordEvery, v0);
+        sim.simulate(maxTime, "./results/simulation_v"+v0+".txt", recordEvery, v0);
     }
 }

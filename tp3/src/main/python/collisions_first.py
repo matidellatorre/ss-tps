@@ -19,7 +19,7 @@ for v in velocities:
         for line in f:
             parts = line.strip().split()
             if len(parts) >= 4:  # Ensure we have all required columns
-                all_collisions.append(int(parts[2]))  # all_obstacle_col is the third column
+                all_collisions.append(int(parts[1]))  # first_obstacle_col is the second column
                 time.append(float(parts[3]))  # time is the fourth column
     
     # Plot the data
@@ -27,7 +27,7 @@ for v in velocities:
 
 # Customize the plot
 plt.xlabel('Tiempo (s)', fontsize=18)
-plt.ylabel('Partículas colisionadas', fontsize=18)
+plt.ylabel('Particulas colisionadas', fontsize=18)
 plt.grid(True, linestyle='--', alpha=0.7)
 plt.legend(fontsize=18)
 
