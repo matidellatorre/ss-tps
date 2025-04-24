@@ -27,7 +27,7 @@ for v in velocities:
 
 # Customize the plot
 plt.xlabel('Tiempo (s)', fontsize=18)
-plt.ylabel('Partículas colisionadas', fontsize=18)
+plt.ylabel('Colisiones', fontsize=18)
 plt.grid(True, linestyle='--', alpha=0.7)
 plt.legend(fontsize=18)
 

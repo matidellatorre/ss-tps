@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 # Read file
-df = pd.read_csv("./results/pressure_time.txt", delim_whitespace=True)
+df = pd.read_csv("./results/pressure_time_v1.0.txt", delim_whitespace=True)
 
 # Set font sizes
 plt.rcParams.update({'font.size': 20})
