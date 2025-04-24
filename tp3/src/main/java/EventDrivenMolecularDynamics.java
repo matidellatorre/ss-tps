@@ -382,12 +382,14 @@ public class EventDrivenMolecularDynamics {
         // Parámetros configurables
         int N = 200;              // Número de partículas (puede cambiarse)
         double v0 = 1.0;          // Velocidad inicial
-        int N_eventos = 10000;    // Número de eventos a simular
+        int N_eventos = 20000;    // Número de eventos a simular
         int savingFrequency = 1; // Guardar cada cuántos eventos
 
-        // Crear y ejecutar la simulación
-        EventDrivenMolecularDynamics simulation = new EventDrivenMolecularDynamics(N, v0, N_eventos, savingFrequency);
-        simulation.initialize();
-        simulation.simulate("simulation_output.txt", "special_collisions.txt");
+        for (int i=1; i <=10; i++){
+            // Crear y ejecutar la simulación
+            EventDrivenMolecularDynamics simulation = new EventDrivenMolecularDynamics(N, v0, N_eventos, savingFrequency);
+            simulation.initialize();
+            simulation.simulate("simulation_output.txt", "special_collisions" + i + ".txt" );
+        }
     }
 }
