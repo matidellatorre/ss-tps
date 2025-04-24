@@ -26,7 +26,7 @@ for archivo in archivos:
 t_max = min(2.0, min([traj[2][-1] for traj in trayectorias]))
 t_ref = np.linspace(0, t_max, 100)  # 100 puntos uniformemente espaciados
 
-# Resto del código igual...
+# Paso 3: Interpolar las trayectorias
 X_interp = []
 Y_interp = []
 
@@ -49,20 +49,24 @@ dy2 = (Y_interp - y0) ** 2
 dcm = np.mean(dx2 + dy2, axis=0)
 std_dcm = np.std(dx2 + dy2, axis=0) / np.sqrt(len(trayectorias))
 
-# Paso 5: Ajuste lineal
-limite_inferior = 0.425
-idx_inicio = np.searchsorted(t_ref, limite_inferior)
+# Filtrar datos hasta 0.425 segundos
+limite_superior = 0.425
+mask = t_ref <= limite_superior
+t_ref = t_ref[mask]
+dcm = dcm[mask]
+std_dcm = std_dcm[mask]
 
-slope, intercept, r_value, p_value, std_err = linregress(t_ref[idx_inicio:], dcm[idx_inicio:])
-D = slope / 4
+# Paso 5: Ajuste lineal
+slope, intercept, r_value, p_value, std_err = linregress(t_ref, dcm)
+D = slope / 4  # Para 2D: DCM = 4Dt
 
 # Paso 6: Graficar
-plt.errorbar(t_ref, dcm, yerr=std_dcm, fmt='o', label='DCM')
-plt.axvline(x=t_ref[idx_inicio], color='red', linestyle='dashed')
+plt.errorbar(t_ref, dcm, yerr=std_dcm, fmt='o', label='DCM observado')
+plt.plot(t_ref, slope * t_ref + intercept, 'r-', label='Ajuste Lineal')
 plt.xlabel('Tiempo (s)')
-plt.ylabel('DCM')
+plt.ylabel('DCM (m²)')
 plt.legend()
 plt.grid(True)
 plt.show()
 
-print(f"Coeficiente de difusión D: {D:.4e} (unidades del sistema)")
+print(f"Coeficiente de difusión D: {D:.4e} m²/s")
