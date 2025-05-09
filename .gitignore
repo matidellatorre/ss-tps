@@ -32,3 +32,5 @@ tp2/main/main.iml
 tp3/simulation.txt
 tp3/pressure_time.txt
 /tp3/results
+/tp4/output
+/tp4/.idea
