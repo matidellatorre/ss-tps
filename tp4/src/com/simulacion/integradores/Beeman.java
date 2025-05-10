@@ -14,18 +14,19 @@ public class Beeman implements Integrador {
 
     @Override
     public void simular(double dt, double tiempoTotal, PrintWriter writer, List<Double> tiempos, List<Double> posicionesNumericas) {
+        // Estado actual
         double rCurr = OsciladorAmortiguado.POSICION_INICIAL;
         double vCurr = OsciladorAmortiguado.VELOCIDAD_INICIAL;
         double aCurr = OsciladorAmortiguado.calcularAceleracion(rCurr, vCurr);
-        double aPrev = OsciladorAmortiguado.calcularAceleracion(rCurr - vCurr * dt, vCurr - aCurr*dt); // Estimar a(-dt)
-        // O más simple: aPrev = aCurr para el primer paso.
-        //aPrev = aCurr; // Simplificación común para el primer paso de Beeman
+
+        // Inicialización del estado anterior usando Euler
+        double rPrev = rCurr - vCurr * dt + (dt * dt / 2) * aCurr;
+        double vPrev = vCurr - (dt) * aCurr;
+        double aPrev = OsciladorAmortiguado.calcularAceleracion(rPrev, vPrev);
 
         double t = 0;
         tiempos.clear();
         posicionesNumericas.clear();
-
-        // writer.println("tiempo,posicion_analitica,posicion_beeman");
 
         for (int step = 0; t <= tiempoTotal + dt/2.0; step++) {
             double rAnalitica = SolucionAnalitica.calcularPosicion(t);
@@ -38,20 +39,22 @@ public class Beeman implements Integrador {
             if (t >= tiempoTotal - dt/2.0 && t > 0) break;
 
             // Predictor
-            double rNext = rCurr + vCurr * dt + (1.0/6.0) * (4 * aCurr - aPrev) * dt * dt;
-            double vPredNext = vCurr + (1.0/2.0) * (3 * aCurr - aPrev) * dt;
+            double rNext = rCurr + vCurr * dt + (2.0/3.0) * aCurr * dt * dt - (1.0/6.0) * aPrev * dt * dt;
+            double vPredNext = vCurr + (3.0/2.0) * aCurr * dt - (1.0/2.0) * aPrev * dt;
 
             // Evaluar aceleración en t+dt
-            double aNext = OsciladorAmortiguado.calcularAceleracion(rNext, vPredNext); // Usa vPredNext
+            double aNext = OsciladorAmortiguado.calcularAceleracion(rNext, vPredNext);
 
             // Corrector para velocidad
-            double vCorrNext = vCurr + (1.0/6.0) * (2 * aNext + 5 * aCurr - aPrev) * dt;
+            double vCorrNext = vCurr + (1.0/3.0) * aNext * dt + (5.0/6.0) * aCurr * dt - (1.0/6.0) * aPrev * dt;
 
             // Actualizar variables
+            aPrev = aCurr;
+
             rCurr = rNext;
             vCurr = vCorrNext;
-            aPrev = aCurr;
             aCurr = aNext;
+
             t += dt;
         }
     }
